@@ -1,0 +1,143 @@
+<?php
+
+declare(strict_types=1);
+
+namespace CoringaWc\FilamentTutorials;
+
+class TutorialStep
+{
+    protected ?string $key = null;
+
+    protected ?TutorialTarget $target = null;
+
+    protected ?string $title = null;
+
+    protected ?string $description = null;
+
+    /** @var list<array{action: string, parameters: array<string, mixed>}> */
+    protected array $before = [];
+
+    /** @var list<array{action: string, parameters: array<string, mixed>}> */
+    protected array $after = [];
+
+    public static function make(?string $key = null): static
+    {
+        $step = app(static::class);
+
+        if ($key !== null) {
+            $step->key($key);
+        }
+
+        return $step;
+    }
+
+    public function key(string $key): static
+    {
+        $this->key = $key;
+
+        return $this;
+    }
+
+    public function target(string|TutorialTarget $target): static
+    {
+        $this->target = is_string($target) ? TutorialTarget::custom($target) : $target;
+
+        return $this;
+    }
+
+    /**
+     * @param  class-string  $resourceOrPage
+     */
+    public function targetNavigation(string $resourceOrPage): static
+    {
+        return $this->target(TutorialTarget::navigation($resourceOrPage));
+    }
+
+    /**
+     * @param  class-string|null  $owner
+     */
+    public function targetAction(string $action, ?string $owner = null): static
+    {
+        return $this->target(TutorialTarget::action($action, $owner));
+    }
+
+    /**
+     * @param  class-string|null  $page
+     */
+    public function targetPage(?string $page = null): static
+    {
+        return $this->target(TutorialTarget::page($page));
+    }
+
+    public function title(string $title): static
+    {
+        $this->title = $title;
+
+        return $this;
+    }
+
+    public function description(string $description): static
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    public function before(string $action, array $parameters = []): static
+    {
+        $this->before[] = compact('action', 'parameters');
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    public function after(string $action, array $parameters = []): static
+    {
+        $this->after[] = compact('action', 'parameters');
+
+        return $this;
+    }
+
+    public function beforeOpenSidebar(): static
+    {
+        return $this->before('sidebar.open');
+    }
+
+    public function afterOpenSidebar(): static
+    {
+        return $this->after('sidebar.opened');
+    }
+
+    public function beforeOpenProfileMenu(): static
+    {
+        return $this->before('profile-menu.open');
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    public function beforeOpenModal(array $parameters = []): static
+    {
+        return $this->before('modal.open', $parameters);
+    }
+
+    /**
+     * @return array{key: string|null, target: array<string, mixed>|null, title: string|null, description: string|null, before: list<array{action: string, parameters: array<string, mixed>}>, after: list<array{action: string, parameters: array<string, mixed>}>}
+     */
+    public function toArray(): array
+    {
+        return [
+            'key' => $this->key,
+            'target' => $this->target?->toArray(),
+            'title' => $this->title,
+            'description' => $this->description,
+            'before' => $this->before,
+            'after' => $this->after,
+        ];
+    }
+}

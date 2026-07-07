@@ -1,0 +1,9 @@
+{
+  "autoload": {
+    "psr-4": {
+      "Workbench\\App\\": "app/",
+      "Workbench\\Database\\Seeders\\": "database/seeders/"
+    }
+  }
+}
+
