@@ -26,6 +26,6 @@ Persist per-user completion, dismissal, restart, and auto-start state with packa
 
 ## Phase 005: Browser Coverage And Documentation
 
-Status: pending
+Status: completed
 
 Prove workbench UI behavior with browser tests/screenshots and document package usage patterns.
