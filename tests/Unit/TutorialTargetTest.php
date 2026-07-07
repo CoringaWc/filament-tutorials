@@ -29,6 +29,14 @@ it('serializes render hook targets', function (): void {
     ]);
 });
 
+it('serializes component targets', function (): void {
+    expect(TutorialTarget::component('workbench.resource.form.title')->toArray())->toBe([
+        'type' => 'component',
+        'key' => 'workbench.resource.form.title',
+        'parameters' => [],
+    ]);
+});
+
 it('serializes action targets', function (): void {
     expect(TutorialTarget::action('create', WorkbenchDashboard::class)->toArray())->toBe([
         'type' => 'action',

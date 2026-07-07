@@ -14,7 +14,7 @@ Register Driver.js assets through Filament panel/plugin conventions, expose one 
 
 ## Phase 003: Expanded Target Injection
 
-Status: pending
+Status: completed
 
 Expand target support beyond the Phase 002 MVP: modals, profile menu, sidebar lifecycle, table/page actions with owners, and dynamic Livewire surfaces without requiring every resource/page to define `extraAttributes()` manually.
 

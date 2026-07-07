@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
 use Workbench\App\Models\TutorialRecord;
@@ -22,6 +23,7 @@ it('renders dashboard tutorial runtime and stable coverage targets', function ()
         ->assertSee('data-tour="workbench.schema.card"', false)
         ->assertSee('data-tour="workbench.table.wrapper"', false)
         ->assertSee('data-tour="workbench.dropdown.trigger"', false)
+        ->assertSee('data-tour="workbench.profile.trigger"', false)
         ->assertSee('data-tour="workbench.collapsible.trigger"', false)
         ->assertSee('data-tour="filament-tutorials.render-hook.page.header-widgets.before"', false)
         ->assertSee('data-tour="filament-tutorials.render-hook.global-search.before"', false)
@@ -39,7 +41,7 @@ it('renders resource tutorial targets and related page targets', function (): vo
         ->assertOk()
         ->assertSee('data-filament-tutorials-runtime', false)
         ->assertSee('data-filament-tutorials-launcher', false)
-        ->assertSee('data-tour="workbench.resource.table.title"', false)
+        ->assertSee(sprintf('data-tour="%s"', TutorialTargetKeys::component('workbench.resource.table.title')), false)
         ->assertSee('data-tour="filament-tutorials.render-hook.resource.list.table.before"', false);
 
     get(TutorialRecordResource::getUrl('relations', ['record' => $record], panel: 'admin'))

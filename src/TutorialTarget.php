@@ -25,6 +25,11 @@ final class TutorialTarget
         return new static('renderHook', $key);
     }
 
+    public static function component(string $key): static
+    {
+        return new static('component', $key);
+    }
+
     /**
      * @param  class-string  $resourceOrPage
      */

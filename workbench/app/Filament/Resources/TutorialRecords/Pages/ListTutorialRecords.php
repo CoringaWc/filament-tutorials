@@ -6,8 +6,8 @@ namespace Workbench\App\Filament\Resources\TutorialRecords\Pages;
 
 use CoringaWc\FilamentTutorials\Contracts\HasFilamentTutorials;
 use CoringaWc\FilamentTutorials\FilamentTutorial;
-use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use CoringaWc\FilamentTutorials\TutorialStep;
+use CoringaWc\FilamentTutorials\TutorialTargetAttributes;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
@@ -23,9 +23,7 @@ class ListTutorialRecords extends ListRecords implements HasFilamentTutorials
     {
         return [
             CreateAction::make()
-                ->extraAttributes([
-                    'data-tour' => TutorialTargetKeys::action('create', static::class),
-                ])
+                ->extraAttributes(TutorialTargetAttributes::action('create', static::class))
                 ->extraModalWindowAttributes([
                     'data-tour' => 'workbench.resource.create-modal',
                 ], merge: true),
@@ -53,12 +51,12 @@ class ListTutorialRecords extends ListRecords implements HasFilamentTutorials
                     ->target('workbench.resource.create-modal')
                     ->title('Modal de cadastro')
                     ->description('O tutorial aguarda a abertura do modal antes de destacar o formulário.')
-                    ->beforeOpenModal(['selector' => sprintf('[data-tour="%s"]', TutorialTargetKeys::action('create', static::class))]),
+                    ->beforeOpenModal(['selector' => TutorialTargetAttributes::selector(TutorialTargetAttributes::action('create', static::class))]),
                 TutorialStep::make('form-field')
-                    ->target('workbench.resource.form.title')
+                    ->targetComponent('workbench.resource.form.title')
                     ->title('Campo do formulário')
                     ->description('Campos internos usam data-tour explícito no componente dono do campo.')
-                    ->beforeOpenModal(['selector' => sprintf('[data-tour="%s"]', TutorialTargetKeys::action('create', static::class))]),
+                    ->beforeOpenModal(['selector' => TutorialTargetAttributes::selector(TutorialTargetAttributes::action('create', static::class))]),
             ]);
     }
 }

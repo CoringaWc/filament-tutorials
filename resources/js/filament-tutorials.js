@@ -106,13 +106,45 @@ const runAction = async (action) => {
     return
   }
 
+  if (action.action === 'profile-menu.open') {
+    if (parameters.selector) {
+      await clickSelector(parameters.selector)
+    }
+
+    return
+  }
+
+  if (action.action === 'wait-for') {
+    await waitForElement(parameters.selector)
+
+    return
+  }
+
+  if (action.action === 'hide') {
+    document.querySelector(parameters.selector)?.setAttribute('hidden', '')
+
+    return
+  }
+
   if (action.action === 'sidebar.open') {
+    if (parameters.selector) {
+      await clickSelector(parameters.selector)
+
+      return
+    }
+
     document.dispatchEvent(new CustomEvent('filament-tutorials:open-sidebar'))
   }
 }
 
 const runBeforeActions = async (step) => {
   for (const action of step.before ?? []) {
+    await runAction(action)
+  }
+}
+
+const runAfterActions = async (step) => {
+  for (const action of step.after ?? []) {
     await runAction(action)
   }
 }
@@ -133,6 +165,9 @@ const driverSteps = (tutorial) => {
       popover: {
         title: step.title,
         description: step.description,
+      },
+      onDeselected: () => {
+        runAfterActions(step).catch((error) => console.error(error))
       },
     }))
 }

@@ -214,6 +214,9 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                                 <button type="button" data-tour="workbench.dropdown.trigger" data-lab-dropdown-trigger class="tutorial-lab-button">
                                     Abrir menu
                                 </button>
+                                <button type="button" data-tour="workbench.profile.trigger" data-lab-profile-trigger class="tutorial-lab-button">
+                                    Menu do usuário
+                                </button>
                                 <button type="button" data-tour="workbench.collapsible.trigger" data-lab-collapsible-trigger class="tutorial-lab-button">
                                     Abrir seção
                                 </button>
@@ -224,6 +227,10 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
 
                             <div data-tour="workbench.dropdown.menu" data-lab-dropdown-menu hidden class="tutorial-lab-menu">
                                 Menu aberto por pre-action antes do step.
+                            </div>
+
+                            <div data-tour="workbench.profile.menu" data-lab-profile-menu hidden class="tutorial-lab-menu">
+                                Menu de perfil aberto por pre-action.
                             </div>
 
                             <div data-tour="workbench.collapsible.panel" data-lab-collapsible-panel hidden class="tutorial-lab-panel">
@@ -241,6 +248,10 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                                 document.addEventListener('click', (event) => {
                                     if (event.target.closest('[data-lab-dropdown-trigger]')) {
                                         document.querySelector('[data-lab-dropdown-menu]')?.removeAttribute('hidden')
+                                    }
+
+                                    if (event.target.closest('[data-lab-profile-trigger]')) {
+                                        document.querySelector('[data-lab-profile-menu]')?.removeAttribute('hidden')
                                     }
 
                                     if (event.target.closest('[data-lab-collapsible-trigger]')) {
@@ -321,6 +332,11 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                     ->title('Menu aberto')
                     ->description('Pre-actions revelam menus antes do destaque.')
                     ->beforeOpenDropdown('[data-lab-dropdown-trigger]'),
+                TutorialStep::make('profile-menu')
+                    ->target('workbench.profile.menu')
+                    ->title('Menu de perfil')
+                    ->description('Menus de perfil podem ser abertos antes do destaque quando o gatilho é conhecido.')
+                    ->beforeOpenProfileMenu('[data-lab-profile-trigger]'),
                 TutorialStep::make('collapsible')
                     ->target('workbench.collapsible.panel')
                     ->title('Seção aberta')

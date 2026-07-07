@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Workbench\App\Filament\Widgets;
 
+use CoringaWc\FilamentTutorials\TutorialTargetAttributes;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -19,7 +20,7 @@ class TutorialStatsWidget extends StatsOverviewWidget
         return [
             Stat::make('Tutoriais', 8)
                 ->description('Fluxos cobertos')
-                ->extraAttributes(['data-tour' => 'workbench.widget.stats']),
+                ->extraAttributes(TutorialTargetAttributes::component('workbench.widget.stats')),
             Stat::make('Alvos', 18)
                 ->description('Elementos rastreáveis'),
         ];

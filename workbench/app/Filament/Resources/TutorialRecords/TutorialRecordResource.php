@@ -8,6 +8,7 @@ use BackedEnum;
 use CoringaWc\FilamentTutorials\Contracts\HasFilamentTutorials;
 use CoringaWc\FilamentTutorials\FilamentTutorial;
 use CoringaWc\FilamentTutorials\TutorialStep;
+use CoringaWc\FilamentTutorials\TutorialTargetAttributes;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -52,7 +53,7 @@ class TutorialRecordResource extends Resource implements HasFilamentTutorials
                         TextInput::make('title')
                             ->label('Título')
                             ->required()
-                            ->extraInputAttributes(['data-tour' => 'workbench.resource.form.title']),
+                            ->extraInputAttributes(TutorialTargetAttributes::component('workbench.resource.form.title')),
                         Select::make('status')
                             ->label('Situação')
                             ->options([
@@ -61,11 +62,11 @@ class TutorialRecordResource extends Resource implements HasFilamentTutorials
                                 'archived' => 'Arquivado',
                             ])
                             ->required()
-                            ->extraInputAttributes(['data-tour' => 'workbench.resource.form.status']),
+                            ->extraInputAttributes(TutorialTargetAttributes::component('workbench.resource.form.status')),
                         Textarea::make('summary')
                             ->label('Resumo')
                             ->columnSpanFull()
-                            ->extraInputAttributes(['data-tour' => 'workbench.resource.form.summary']),
+                            ->extraInputAttributes(TutorialTargetAttributes::component('workbench.resource.form.summary')),
                     ])
                     ->columns(2),
             ]);
@@ -78,11 +79,11 @@ class TutorialRecordResource extends Resource implements HasFilamentTutorials
                 TextColumn::make('title')
                     ->label('Título')
                     ->searchable()
-                    ->extraHeaderAttributes(['data-tour' => 'workbench.resource.table.title']),
+                    ->extraHeaderAttributes(TutorialTargetAttributes::component('workbench.resource.table.title')),
                 TextColumn::make('status')
                     ->label('Situação')
                     ->badge()
-                    ->extraHeaderAttributes(['data-tour' => 'workbench.resource.table.status']),
+                    ->extraHeaderAttributes(TutorialTargetAttributes::component('workbench.resource.table.status')),
                 TextColumn::make('created_at')
                     ->label('Criado em')
                     ->dateTime('d/m/Y H:i'),

@@ -52,5 +52,13 @@ it('serializes navigation and page helper targets', function (): void {
                 'key' => WorkbenchDashboard::class,
                 'parameters' => [],
             ],
+        ])
+        ->and(TutorialStep::make('component')->targetComponent('workbench.card')->toArray())
+        ->toMatchArray([
+            'target' => [
+                'type' => 'component',
+                'key' => 'workbench.card',
+                'parameters' => [],
+            ],
         ]);
 });

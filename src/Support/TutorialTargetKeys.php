@@ -30,6 +30,11 @@ final class TutorialTargetKeys
         return 'filament-tutorials.render-hook.'.Str::of($key)->replace([':', '_'], '.')->kebab()->toString();
     }
 
+    public static function component(string $key): string
+    {
+        return 'filament-tutorials.component.'.Str::of($key)->replace([':', '_'], '.')->kebab()->toString();
+    }
+
     private static function classKey(string $class): string
     {
         return Str::of($class)

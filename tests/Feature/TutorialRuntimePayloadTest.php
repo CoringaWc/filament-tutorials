@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use CoringaWc\FilamentTutorials\Support\TutorialPayloadFactory;
+use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use Filament\Facades\Filament;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
 use Workbench\App\Filament\Resources\TutorialRecords\Pages\ListTutorialRecords;
@@ -54,5 +55,6 @@ it('resolves stable selectors for page action and render hook targets', function
 
     expect($selectors)
         ->toContain('[data-tour="filament-tutorials.render-hook.resource.list.table.before"]')
-        ->toContain('[data-tour="workbench.resource.create-modal"]');
+        ->toContain('[data-tour="workbench.resource.create-modal"]')
+        ->toContain(sprintf('[data-tour="%s"]', TutorialTargetKeys::component('workbench.resource.form.title')));
 });

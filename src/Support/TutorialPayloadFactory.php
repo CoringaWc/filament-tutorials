@@ -88,6 +88,7 @@ class TutorialPayloadFactory
             'custom' => $key,
             'page' => TutorialTargetKeys::page($key ?? $this->currentPageFromScopes($scopes)),
             'navigation' => $key === null ? null : TutorialTargetKeys::navigation($key),
+            'component' => $key === null ? null : TutorialTargetKeys::component($key),
             'action' => $key === null ? null : TutorialTargetKeys::action(
                 $key,
                 is_string($parameters['owner'] ?? null) ? $parameters['owner'] : null,

@@ -58,6 +58,11 @@ class TutorialStep
         return $this->target(TutorialTarget::renderHook($key));
     }
 
+    public function targetComponent(string $key): static
+    {
+        return $this->target(TutorialTarget::component($key));
+    }
+
     /**
      * @param  class-string|null  $owner
      */
@@ -108,9 +113,11 @@ class TutorialStep
         return $this;
     }
 
-    public function beforeOpenSidebar(): static
+    public function beforeOpenSidebar(?string $selector = null): static
     {
-        return $this->before('sidebar.open');
+        return $this->before('sidebar.open', array_filter([
+            'selector' => $selector,
+        ]));
     }
 
     public function afterOpenSidebar(): static
@@ -118,9 +125,31 @@ class TutorialStep
         return $this->after('sidebar.opened');
     }
 
-    public function beforeOpenProfileMenu(): static
+    public function beforeOpenProfileMenu(?string $selector = null): static
     {
-        return $this->before('profile-menu.open');
+        return $this->before('profile-menu.open', array_filter([
+            'selector' => $selector,
+        ]));
+    }
+
+    public function beforeClick(string $selector): static
+    {
+        return $this->before('click', ['selector' => $selector]);
+    }
+
+    public function beforeWaitFor(string $selector): static
+    {
+        return $this->before('wait-for', ['selector' => $selector]);
+    }
+
+    public function afterClick(string $selector): static
+    {
+        return $this->after('click', ['selector' => $selector]);
+    }
+
+    public function afterHide(string $selector): static
+    {
+        return $this->after('hide', ['selector' => $selector]);
     }
 
     /**
