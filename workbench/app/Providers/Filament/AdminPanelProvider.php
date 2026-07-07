@@ -54,7 +54,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([])
             ->plugins([
                 FilamentTutorialsPlugin::make()
-                    ->discoverTutorials()
+                    ->discoverTutorials(
+                        in: dirname(__DIR__, 2).'/Filament/Admin/Tutorials',
+                        for: 'Workbench\\App\\Filament\\Admin\\Tutorials',
+                    )
                     ->tutorials(
                         FilamentTutorial::make('explicit-workbench-tutorial')
                             ->forPage(WorkbenchDashboard::class)

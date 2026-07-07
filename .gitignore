@@ -6,7 +6,8 @@ tests/Browser/Screenshots/
 /build
 /.env
 /workbench/database/database.sqlite
-/workbench/public
+/workbench/public/*
+!/workbench/public/index.php
 /workbench/vendor
 /workbench/storage/*
 !/workbench/storage/app

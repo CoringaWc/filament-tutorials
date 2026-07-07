@@ -4,6 +4,7 @@ import '../css/filament-tutorials.css'
 const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
 let activeDriver = null
+let alpineComponentRegistered = false
 
 const destroyActiveDriver = () => {
   if (!activeDriver) {
@@ -246,42 +247,126 @@ const currentTutorial = (payload) => {
   return tutorials[tutorials.length - 1]
 }
 
+const currentRuntime = () => document.querySelector(runtimeSelector)
+
+const currentPayload = () => {
+  const runtime = currentRuntime()
+
+  return runtime ? runtimePayload(runtime) : {}
+}
+
+const currentTutorialIsAvailable = () => Boolean(currentTutorial(currentPayload()))
+
+const startCurrentTutorial = async () => {
+  const runtime = currentRuntime()
+  const tutorial = currentTutorial(currentPayload())
+
+  if (!runtime || !tutorial) {
+    return
+  }
+
+  await startTutorial(runtime, tutorial)
+}
+
+const listenForEvent = (target, eventName, listener) => {
+  target.addEventListener(eventName, listener)
+
+  return () => target.removeEventListener(eventName, listener)
+}
+
+const dispatchLauncherAvailability = () => {
+  document.dispatchEvent(new CustomEvent('filament-tutorials:launcher-availability-changed', {
+    detail: {
+      available: currentTutorialIsAvailable(),
+    },
+  }))
+}
+
+const bootFallbackLaunchers = () => {
+  if (window.Alpine) {
+    return
+  }
+
+  document.querySelectorAll(launcherSelector).forEach((launcher) => {
+    launcher.hidden = !currentTutorialIsAvailable()
+    launcher.dataset.filamentTutorialsBooted = 'true'
+
+    if (launcher.dataset.filamentTutorialsFallbackBooted === 'true') {
+      return
+    }
+
+    launcher.dataset.filamentTutorialsFallbackBooted = 'true'
+
+    launcher.addEventListener('click', () => {
+      startCurrentTutorial().catch((error) => console.error(error))
+    })
+  })
+}
+
+const initializeAlpineLaunchers = () => {
+  if (!window.Alpine?.initTree) {
+    return
+  }
+
+  document.querySelectorAll(launcherSelector).forEach((launcher) => {
+    if (launcher._x_dataStack) {
+      return
+    }
+
+    window.Alpine.initTree(launcher)
+  })
+}
+
+const registerAlpineComponent = () => {
+  if (alpineComponentRegistered || !window.Alpine) {
+    return
+  }
+
+  alpineComponentRegistered = true
+
+  window.Alpine.data('filamentTutorialsLauncher', () => ({
+    available: false,
+    listeners: [],
+
+    init() {
+      this.$el.dataset.filamentTutorialsBooted = 'true'
+      this.available = currentTutorialIsAvailable()
+
+      this.listeners.push(listenForEvent(
+        document,
+        'filament-tutorials:launcher-availability-changed',
+        (event) => {
+          this.available = Boolean(event.detail?.available)
+        },
+      ))
+    },
+
+    destroy() {
+      this.listeners.forEach((removeListener) => removeListener())
+      this.listeners = []
+    },
+
+    start() {
+      startCurrentTutorial().catch((error) => console.error(error))
+    },
+  }))
+}
+
 const bootRuntime = (runtime) => {
   if (runtime.dataset.booted === 'true') {
+    dispatchLauncherAvailability()
+
     return
   }
 
   runtime.dataset.booted = 'true'
 
   const payload = runtimePayload(runtime)
-  const launcher = document.querySelector(launcherSelector)
 
-  if (!launcher || !payload.tutorials?.length) {
-    document.querySelectorAll(launcherSelector).forEach((button) => {
-      button.hidden = true
-    })
-
-    return
-  }
-
-  document.querySelectorAll(launcherSelector).forEach((button) => {
-    button.hidden = false
-  })
-
-  if (launcher.dataset.filamentTutorialsBooted === 'true') {
-    return
-  }
-
-  launcher.dataset.filamentTutorialsBooted = 'true'
-
-  launcher.addEventListener('click', () => {
-    const currentRuntime = document.querySelector(runtimeSelector)
-    const currentPayload = currentRuntime ? runtimePayload(currentRuntime) : payload
-
-    startTutorial(currentRuntime ?? runtime, currentTutorial(currentPayload)).catch((error) => {
-      console.error(error)
-    })
-  })
+  registerAlpineComponent()
+  initializeAlpineLaunchers()
+  bootFallbackLaunchers()
+  dispatchLauncherAvailability()
 
   if (currentTutorial(payload)?.autoStart) {
     startTutorial(runtime, currentTutorial(payload)).catch((error) => {
@@ -289,6 +374,8 @@ const bootRuntime = (runtime) => {
     })
   }
 }
+
+document.addEventListener('alpine:init', registerAlpineComponent)
 
 const boot = () => {
   document.querySelectorAll(runtimeSelector).forEach(bootRuntime)

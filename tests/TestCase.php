@@ -76,4 +76,9 @@ abstract class TestCase extends Orchestra
         $app['config']->set('app.faker_locale', 'pt_BR');
         $app['config']->set('session.driver', 'array');
     }
+
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../workbench/database/migrations');
+    }
 }
