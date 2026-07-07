@@ -13,9 +13,11 @@
 - Tutoriais simples podem ser declarados diretamente em `Page` ou `Resource` via contrato.
 - Nao use seletores internos `.fi-*` como contrato de tutorial. O plugin deve gerar `data-tour` estavel.
 - Use Driver.js pela API oficial. Alpine pode orquestrar lifecycle local apenas se isso ficar comprovado no spike/plano.
+- O submodulo `packages/workbench` fornece os scripts/runtime Docker. A matriz Laravel/Testbench suportada pelo plugin fica no `composer.json` raiz do pacote.
 
 ## Verificacao
 
+- `./packages/workbench/bin/sail composer validate --strict`
 - `./packages/workbench/bin/sail php vendor/bin/pest`
 - `./packages/workbench/bin/sail pint --dirty`
 - `./packages/workbench/bin/sail phpstan --memory-limit=1G`

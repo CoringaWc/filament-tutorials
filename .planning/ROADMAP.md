@@ -2,9 +2,9 @@
 
 ## Phase 001: Core Plugin Contract
 
-Status: reviewed-ready-for-execution
+Status: completed
 
-Harden the package skeleton, public PHP API, workbench setup, discovery model, inline Page/Resource contract, and release gates. The scaffold exists, but the GSD review found missing executable tasks; see `phase-001-filament-tutorials-core/REVIEWS.md` and the revised `PLAN.md`.
+Harden the package skeleton, public PHP API, workbench setup, discovery model, inline Page/Resource contract, and release gates. Completed 2026-07-07; see `phase-001-filament-tutorials-core/SUMMARY.md`.
 
 ## Phase 002: Runtime And Stable Targets
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CoringaWc\FilamentTutorials;
 
+use CoringaWc\FilamentTutorials\Support\InlineTutorialCollector;
 use CoringaWc\FilamentTutorials\Support\TutorialDiscovery;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use Filament\Contracts\Plugin;
@@ -76,7 +77,10 @@ class FilamentTutorialsPlugin implements Plugin
 
     public function boot(Panel $panel): void
     {
-        //
+        app(TutorialManager::class)->register(
+            $panel->getId(),
+            app(InlineTutorialCollector::class)->collect($panel),
+        );
     }
 
     /**
@@ -91,10 +95,11 @@ class FilamentTutorialsPlugin implements Plugin
         $panelNamespace = Str::studly($panel->getId());
         $pathSuffix = config('filament-tutorials.discovery.path_suffix', 'Tutorials');
         $namespaceSuffix = config('filament-tutorials.discovery.namespace_suffix', 'Tutorials');
+        $appNamespace = rtrim(app()->getNamespace(), '\\');
 
         return [[
             'path' => app_path("Filament/{$panelNamespace}/{$pathSuffix}"),
-            'namespace' => "App\\Filament\\{$panelNamespace}\\{$namespaceSuffix}",
+            'namespace' => "{$appNamespace}\\Filament\\{$panelNamespace}\\{$namespaceSuffix}",
         ]];
     }
 }

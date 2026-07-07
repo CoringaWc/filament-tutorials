@@ -5,6 +5,10 @@ on:
     paths:
       - "**.php"
       - "phpstan.neon"
+  pull_request:
+    paths:
+      - "**.php"
+      - "phpstan.neon"
 
 jobs:
   phpstan:
@@ -24,4 +28,3 @@ jobs:
 
       - name: Run PHPStan
         run: ./vendor/bin/phpstan --error-format=github
-

@@ -1,12 +1,14 @@
-name: "Fix PHP Code Styling"
+name: "Check PHP Code Styling"
 
 on:
   push:
     paths:
       - "**.php"
-
-permissions:
-  contents: write
+      - "pint.json"
+  pull_request:
+    paths:
+      - "**.php"
+      - "pint.json"
 
 jobs:
   php-code-styling:
@@ -15,14 +17,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          ref: ${{ github.head_ref }}
+          php-version: "8.4"
+          coverage: none
 
-      - name: Fix PHP code style issues
-        uses: aglipanci/laravel-pint-action@2.6
+      - name: Install composer dependencies
+        uses: ramsey/composer-install@v3
 
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          commit_message: Fix styling
-
+      - name: Check PHP code style
+        run: vendor/bin/pint --test

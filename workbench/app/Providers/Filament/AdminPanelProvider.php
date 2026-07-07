@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Workbench\App\Providers\Filament;
 
+use CoringaWc\FilamentTutorials\FilamentTutorial;
 use CoringaWc\FilamentTutorials\FilamentTutorialsPlugin;
+use CoringaWc\FilamentTutorials\TutorialStep;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -50,8 +52,17 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentTutorialsPlugin::make()
-                    ->discoverTutorials(enabled: false)
-                    ->tutorials(WorkbenchDashboard::tutorials()),
+                    ->discoverTutorials()
+                    ->tutorials(
+                        FilamentTutorial::make('explicit-workbench-tutorial')
+                            ->forPage(WorkbenchDashboard::class)
+                            ->steps([
+                                TutorialStep::make('explicit-workbench-step')
+                                    ->targetPage(WorkbenchDashboard::class)
+                                    ->title('Explicit tutorial')
+                                    ->description('This tutorial proves explicit plugin registration.'),
+                            ]),
+                    ),
             ]);
     }
 }

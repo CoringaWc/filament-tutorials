@@ -17,6 +17,8 @@ $panel->plugin(
 );
 ```
 
+By default, `discoverTutorials()` scans `app/Filament/{PanelId}/Tutorials`, using the panel id in StudlyCase and the application's namespace. For example, a normal Laravel app with the `app` panel uses `App\Filament\App\Tutorials`, and the `admin` panel uses `App\Filament\Admin\Tutorials`.
+
 Create a tutorial class when the flow deserves its own file:
 
 ```php
@@ -36,6 +38,23 @@ final class ContractingListTutorial extends FilamentTutorial
         ];
     }
 }
+```
+
+You can also register a tutorial explicitly from the panel provider:
+
+```php
+use CoringaWc\FilamentTutorials\FilamentTutorial;
+use CoringaWc\FilamentTutorials\TutorialStep;
+
+$panel->plugin(
+    FilamentTutorialsPlugin::make()
+        ->tutorials(
+            FilamentTutorial::make('contracts-overview')
+                ->steps([
+                    TutorialStep::make('intro')->targetPage(),
+                ]),
+        )
+);
 ```
 
 For a small page-only guide, return an inline tutorial from the page/resource:

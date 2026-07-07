@@ -5,5 +5,5 @@ parameters:
   paths:
     - src
     - tests
+    - workbench/app
   level: 6
-

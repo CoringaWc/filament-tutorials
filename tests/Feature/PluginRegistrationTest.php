@@ -5,6 +5,7 @@ declare(strict_types=1);
 use CoringaWc\FilamentTutorials\FilamentTutorialsPlugin;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use Filament\Facades\Filament;
+use Workbench\App\Filament\Pages\WorkbenchDashboard;
 
 it('registers tutorials for the current panel', function (): void {
     $panel = Filament::getCurrentPanel();
@@ -13,6 +14,14 @@ it('registers tutorials for the current panel', function (): void {
 
     expect($tutorials)
         ->toHaveKey('workbench-dashboard')
+        ->toHaveKey('discovered-workbench')
+        ->toHaveKey('explicit-workbench-tutorial')
+        ->and($tutorials['workbench-dashboard']->getPage())
+        ->toBe(WorkbenchDashboard::class)
+        ->and($tutorials['discovered-workbench']->getPage())
+        ->toBe(WorkbenchDashboard::class)
+        ->and($tutorials['explicit-workbench-tutorial']->getPage())
+        ->toBe(WorkbenchDashboard::class)
         ->and(FilamentTutorialsPlugin::make()->getId())
         ->toBe('filament-tutorials');
 });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CoringaWc\FilamentTutorials;
 
+use CoringaWc\FilamentTutorials\Support\InlineTutorialCollector;
 use CoringaWc\FilamentTutorials\Support\TutorialDiscovery;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use Spatie\LaravelPackageTools\Package;
@@ -22,6 +23,7 @@ class FilamentTutorialsServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
+        $this->app->scoped(InlineTutorialCollector::class);
         $this->app->scoped(TutorialDiscovery::class);
         $this->app->scoped(TutorialManager::class);
     }
