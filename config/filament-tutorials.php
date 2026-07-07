@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 
 return [
@@ -10,7 +11,15 @@ return [
         'namespace_suffix' => 'Tutorials',
     ],
 
-    'launcher_render_hook' => PanelsRenderHook::TOPBAR_START,
+    'launcher' => [
+        'enabled' => true,
+        'render_hook' => PanelsRenderHook::USER_MENU_BEFORE,
+        'icon' => Heroicon::QuestionMarkCircle,
+        'label' => 'Abrir tutorial da página',
+        'tooltip' => 'Abrir tutorial da página',
+    ],
+
+    'launcher_render_hook' => null,
 
     'render_hook_targets' => [
         'global-search.before' => PanelsRenderHook::GLOBAL_SEARCH_BEFORE,

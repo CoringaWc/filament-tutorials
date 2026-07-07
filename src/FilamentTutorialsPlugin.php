@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CoringaWc\FilamentTutorials;
 
+use BackedEnum;
 use CoringaWc\FilamentTutorials\Support\InlineTutorialCollector;
 use CoringaWc\FilamentTutorials\Support\TutorialDiscovery;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
@@ -15,6 +16,7 @@ use Filament\Panel;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentView;
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Str;
 
@@ -27,6 +29,16 @@ class FilamentTutorialsPlugin implements Plugin
 
     /** @var list<FilamentTutorial|class-string<FilamentTutorial>> */
     protected array $tutorials = [];
+
+    protected ?bool $isLauncherEnabled = null;
+
+    protected ?string $launcherRenderHook = null;
+
+    protected string|BackedEnum|null $launcherIcon = null;
+
+    protected ?string $launcherLabel = null;
+
+    protected ?string $launcherTooltip = null;
 
     public static function make(): static
     {
@@ -60,6 +72,69 @@ class FilamentTutorialsPlugin implements Plugin
         foreach (is_array($tutorials) ? $tutorials : [$tutorials] as $tutorial) {
             $this->tutorials[] = $tutorial;
         }
+
+        return $this;
+    }
+
+    public function launcher(
+        bool $enabled = true,
+        ?string $renderHook = null,
+        string|BackedEnum|null $icon = null,
+        ?string $tooltip = null,
+        ?string $label = null,
+    ): static {
+        $this->isLauncherEnabled = $enabled;
+
+        if ($renderHook !== null) {
+            $this->launcherRenderHook = $renderHook;
+        }
+
+        if ($icon !== null) {
+            $this->launcherIcon = $icon;
+        }
+
+        if ($tooltip !== null) {
+            $this->launcherTooltip = $tooltip;
+        }
+
+        if ($label !== null) {
+            $this->launcherLabel = $label;
+        }
+
+        return $this;
+    }
+
+    public function withoutLauncher(): static
+    {
+        $this->isLauncherEnabled = false;
+
+        return $this;
+    }
+
+    public function launcherRenderHook(string $renderHook): static
+    {
+        $this->launcherRenderHook = $renderHook;
+
+        return $this;
+    }
+
+    public function launcherIcon(string|BackedEnum $icon): static
+    {
+        $this->launcherIcon = $icon;
+
+        return $this;
+    }
+
+    public function launcherLabel(string $label): static
+    {
+        $this->launcherLabel = $label;
+
+        return $this;
+    }
+
+    public function launcherTooltip(?string $tooltip): static
+    {
+        $this->launcherTooltip = $tooltip;
 
         return $this;
     }
@@ -138,8 +213,11 @@ class FilamentTutorialsPlugin implements Plugin
 
     protected function registerLauncherHook(Panel $panel): void
     {
-        /** @var string $renderHook */
-        $renderHook = config('filament-tutorials.launcher_render_hook', PanelsRenderHook::GLOBAL_SEARCH_BEFORE);
+        if (! $this->isLauncherEnabled()) {
+            return;
+        }
+
+        $renderHook = $this->getLauncherRenderHook();
 
         FilamentView::registerRenderHook(
             $renderHook,
@@ -152,7 +230,11 @@ class FilamentTutorialsPlugin implements Plugin
                     return '';
                 }
 
-                return view('filament-tutorials::launcher')->render();
+                return view('filament-tutorials::launcher', [
+                    'icon' => $this->getLauncherIcon(),
+                    'label' => $this->getLauncherLabel(),
+                    'tooltip' => $this->getLauncherTooltip(),
+                ])->render();
             },
         );
     }
@@ -200,5 +282,47 @@ class FilamentTutorialsPlugin implements Plugin
                 },
             );
         }
+    }
+
+    protected function isLauncherEnabled(): bool
+    {
+        return $this->isLauncherEnabled ?? (bool) config('filament-tutorials.launcher.enabled', true);
+    }
+
+    protected function getLauncherRenderHook(): string
+    {
+        /** @var string|null $configuredRenderHook */
+        $configuredRenderHook = config('filament-tutorials.launcher.render_hook')
+            ?? config('filament-tutorials.launcher_render_hook');
+
+        return $this->launcherRenderHook
+            ?? $configuredRenderHook
+            ?? PanelsRenderHook::USER_MENU_BEFORE;
+    }
+
+    protected function getLauncherIcon(): string|BackedEnum
+    {
+        $configuredIcon = config('filament-tutorials.launcher.icon');
+
+        return $this->launcherIcon
+            ?? ($configuredIcon instanceof BackedEnum || is_string($configuredIcon) ? $configuredIcon : null)
+            ?? Heroicon::QuestionMarkCircle;
+    }
+
+    protected function getLauncherLabel(): string
+    {
+        return $this->launcherLabel
+            ?? (string) config('filament-tutorials.launcher.label', __('Abrir tutorial da página'));
+    }
+
+    protected function getLauncherTooltip(): ?string
+    {
+        if ($this->launcherTooltip !== null) {
+            return $this->launcherTooltip;
+        }
+
+        $configuredTooltip = config('filament-tutorials.launcher.tooltip', __('Abrir tutorial da página'));
+
+        return is_string($configuredTooltip) ? $configuredTooltip : null;
     }
 }

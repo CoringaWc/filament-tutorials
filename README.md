@@ -34,6 +34,26 @@ public function panel(Panel $panel): Panel
 
 By default, the plugin discovers tutorials in `app/Filament/{PanelId}/Tutorials`, using the panel id in StudlyCase and the application namespace. For example, the `app` panel scans `App\Filament\App\Tutorials`, and the `admin` panel scans `App\Filament\Admin\Tutorials`.
 
+The page tutorial launcher is rendered by default immediately before the Filament user menu, placing the question icon to the left of the profile dropdown in the topbar. You may disable or customize that launcher from the panel declaration:
+
+```php
+use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
+
+FilamentTutorialsPlugin::make()
+    ->launcher(
+        renderHook: PanelsRenderHook::USER_MENU_BEFORE,
+        icon: Heroicon::OutlinedQuestionMarkCircle,
+        tooltip: 'Abrir guia da página',
+        label: 'Abrir guia da página',
+    );
+
+FilamentTutorialsPlugin::make()
+    ->withoutLauncher();
+```
+
+Shortcut methods are also available: `launcherRenderHook()`, `launcherIcon()`, `launcherTooltip()`, and `launcherLabel()`.
+
 You may override discovery:
 
 ```php
