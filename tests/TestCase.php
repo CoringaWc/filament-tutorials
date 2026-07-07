@@ -24,7 +24,6 @@ use Livewire\Mechanisms\DataStore;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
-use Workbench\App\Providers\Filament\AdminPanelProvider;
 use Workbench\App\Providers\WorkbenchServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -63,7 +62,6 @@ abstract class TestCase extends Orchestra
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
             WorkbenchServiceProvider::class,
-            AdminPanelProvider::class,
             FilamentTutorialsServiceProvider::class,
         ], static fn (string $provider): bool => class_exists($provider)));
     }

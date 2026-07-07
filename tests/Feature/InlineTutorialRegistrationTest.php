@@ -6,16 +6,30 @@ use CoringaWc\FilamentTutorials\Support\InlineTutorialCollector;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use Filament\Facades\Filament;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
+use Workbench\App\Filament\Resources\TutorialRecords\Pages\ListTutorialRecords;
+use Workbench\App\Filament\Resources\TutorialRecords\Pages\ManageTutorialRecordRelations;
+use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
 
-it('collects inline tutorials from panel pages', function (): void {
+it('collects inline tutorials from panel pages resources and resource pages', function (): void {
     $tutorials = app(InlineTutorialCollector::class)->collect(Filament::getCurrentPanel());
 
-    expect($tutorials)
-        ->toHaveCount(1)
-        ->and($tutorials[0]->getKey())
-        ->toBe('workbench-dashboard')
-        ->and($tutorials[0]->getPage())
-        ->toBe(WorkbenchDashboard::class);
+    $tutorialsByKey = collect($tutorials)->keyBy(fn ($tutorial) => $tutorial->getKey());
+
+    expect($tutorialsByKey->keys()->all())
+        ->toContain(
+            'workbench-dashboard',
+            'tutorial-record-resource',
+            'tutorial-record-list',
+            'tutorial-record-relations',
+        )
+        ->and($tutorialsByKey->get('workbench-dashboard')?->getPage())
+        ->toBe(WorkbenchDashboard::class)
+        ->and($tutorialsByKey->get('tutorial-record-resource')?->getPage())
+        ->toBe(TutorialRecordResource::class)
+        ->and($tutorialsByKey->get('tutorial-record-list')?->getPage())
+        ->toBe(ListTutorialRecords::class)
+        ->and($tutorialsByKey->get('tutorial-record-relations')?->getPage())
+        ->toBe(ManageTutorialRecordRelations::class);
 });
 
 it('registers inline page tutorials during panel boot', function (): void {

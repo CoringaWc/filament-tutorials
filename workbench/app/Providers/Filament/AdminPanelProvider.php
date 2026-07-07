@@ -7,7 +7,6 @@ namespace Workbench\App\Providers\Filament;
 use CoringaWc\FilamentTutorials\FilamentTutorial;
 use CoringaWc\FilamentTutorials\FilamentTutorialsPlugin;
 use CoringaWc\FilamentTutorials\TutorialStep;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -21,6 +20,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
+use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -33,8 +33,12 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->globalSearch()
             ->pages([
                 WorkbenchDashboard::class,
+            ])
+            ->resources([
+                TutorialRecordResource::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -47,9 +51,7 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
-            ->authMiddleware([
-                Authenticate::class,
-            ])
+            ->authMiddleware([])
             ->plugins([
                 FilamentTutorialsPlugin::make()
                     ->discoverTutorials()
@@ -59,8 +61,8 @@ class AdminPanelProvider extends PanelProvider
                             ->steps([
                                 TutorialStep::make('explicit-workbench-step')
                                     ->targetPage(WorkbenchDashboard::class)
-                                    ->title('Explicit tutorial')
-                                    ->description('This tutorial proves explicit plugin registration.'),
+                                    ->title('Tutorial registrado')
+                                    ->description('Este guia foi registrado diretamente no plugin do painel.'),
                             ]),
                     ),
             ]);

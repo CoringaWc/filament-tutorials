@@ -21,6 +21,14 @@ it('serializes navigation targets', function (): void {
     ]);
 });
 
+it('serializes render hook targets', function (): void {
+    expect(TutorialTarget::renderHook('global-search.before')->toArray())->toBe([
+        'type' => 'renderHook',
+        'key' => 'global-search.before',
+        'parameters' => [],
+    ]);
+});
+
 it('serializes action targets', function (): void {
     expect(TutorialTarget::action('create', WorkbenchDashboard::class)->toArray())->toBe([
         'type' => 'action',

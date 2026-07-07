@@ -20,6 +20,11 @@ final class TutorialTarget
         return new self('custom', $key);
     }
 
+    public static function renderHook(string $key): static
+    {
+        return new static('renderHook', $key);
+    }
+
     /**
      * @param  class-string  $resourceOrPage
      */

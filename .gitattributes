@@ -1,6 +1,5 @@
 * text=auto eol=lf
 
-/resources/dist export-ignore
 /tests export-ignore
 /.github export-ignore
 /.planning export-ignore
@@ -11,4 +10,3 @@
 /phpunit.xml.dist export-ignore
 /phpstan.neon export-ignore
 /pint.json export-ignore
-

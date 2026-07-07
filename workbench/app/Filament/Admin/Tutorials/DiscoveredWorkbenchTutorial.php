@@ -21,8 +21,8 @@ class DiscoveredWorkbenchTutorial extends FilamentTutorial
         return [
             TutorialStep::make('discovered-workbench-step')
                 ->targetPage(WorkbenchDashboard::class)
-                ->title('Discovered tutorial')
-                ->description('This tutorial proves panel convention discovery.'),
+                ->title('Tutorial descoberto')
+                ->description('Este guia foi encontrado pela convenção de pastas do painel.'),
         ];
     }
 }

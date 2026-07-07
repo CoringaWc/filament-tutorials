@@ -37,6 +37,12 @@ class InlineTutorialCollector
             ...$panel->getResources(),
         ];
 
+        foreach ($panel->getResources() as $resource) {
+            foreach ($resource::getPages() as $pageRegistration) {
+                $ownerClasses[] = $pageRegistration->getPage();
+            }
+        }
+
         foreach ($panel->getPageConfigurations() as $configuration) {
             $ownerClasses[] = $configuration->getPage();
         }

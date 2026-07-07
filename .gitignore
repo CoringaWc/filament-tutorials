@@ -1,10 +1,9 @@
 /vendor
 /node_modules
 /package-lock.json
+tests/Browser/Screenshots/
 /.phpunit.cache
 /build
-/resources/dist/*
-!/resources/dist/.gitkeep
 /.env
 /workbench/database/database.sqlite
 /workbench/public

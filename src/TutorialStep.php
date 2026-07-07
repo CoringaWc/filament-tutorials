@@ -53,6 +53,11 @@ class TutorialStep
         return $this->target(TutorialTarget::navigation($resourceOrPage));
     }
 
+    public function targetRenderHook(string $key): static
+    {
+        return $this->target(TutorialTarget::renderHook($key));
+    }
+
     /**
      * @param  class-string|null  $owner
      */
@@ -124,6 +129,19 @@ class TutorialStep
     public function beforeOpenModal(array $parameters = []): static
     {
         return $this->before('modal.open', $parameters);
+    }
+
+    public function beforeOpenDropdown(string $selector): static
+    {
+        return $this->before('dropdown.open', ['selector' => $selector]);
+    }
+
+    public function beforeOpenCollapsible(string $trigger, string $panel): static
+    {
+        return $this->before('collapsible.open', [
+            'trigger' => $trigger,
+            'panel' => $panel,
+        ]);
     }
 
     /**

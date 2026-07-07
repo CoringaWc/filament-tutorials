@@ -28,6 +28,8 @@ requirements:
   - FT-008-stable-data-tour-targets
   - FT-009-runtime-accessibility
   - FT-010-browser-smoke
+  - FT-011-workbench-coverage-lab
+  - FT-012-dynamic-preactions
 must_haves:
   truths:
     - Driver.js must be used through its official API.
@@ -37,13 +39,17 @@ must_haves:
     - Tutorial selectors must use `data-tour` attributes generated from stable target keys.
     - Internal Filament classes such as `.fi-*` must not be tutorial contracts.
     - Dynamic targets must wait for the target to exist without `setInterval`, `wire:poll`, or arbitrary sleeps.
+    - Driver.js popovers must visually follow Filament modal rhythm: compact radius, neutral surface, dark/light support, clear close button, primary next button, secondary previous button, and no developer-facing copy.
+    - The Workbench must become a coverage lab, not a one-page demo.
+    - Tutorials may define pre-actions that open sidebar, dropdowns, modals, collapsible sections, relation/nested surfaces, or other hidden UI before Driver.js resolves the target.
   artifacts:
     - Driver.js runtime bridge.
     - Panel-scoped Filament asset registration.
     - Render hook for launcher/runtime payload.
     - Target resolver and data-tour injection strategy.
     - Light/dark Driver.js styling aligned with Filament.
-    - Browser smoke test proving the tutorial opens from the Workbench panel.
+    - Workbench coverage lab for dashboard, pages, resources, relation/nested pages, navbar/topbar, sidebar, global search, dropdowns, modals, infolists, schemas, tables, widgets, actions, and collapsibles.
+    - Browser smoke and visual screenshots proving representative tutorial flows.
   key_links:
     - src/FilamentTutorialsPlugin.php
     - src/Support/*
@@ -65,6 +71,27 @@ Implement the first usable tutorial runtime: a Filament-panel-scoped Driver.js l
 - Prefer vanilla JavaScript for Driver lifecycle unless a documented Filament/Alpine integration point makes a tiny Alpine shell clearly better.
 - Browser verification is mandatory in the same phase that introduces runtime behavior.
 - Dynamic modal/menu/sidebar targets require event or `MutationObserver` based waiting, not polling loops.
+- The package will ship a small vanilla runtime. Alpine is used only where Filament/Livewire already owns the local surface and a native attribute/action is clearer.
+- The first implementation supports declarative pre-actions through step metadata. A pre-action must complete, or at least make the target observable, before Driver.js advances to that step.
+- Workbench examples should be product-like but synthetic; they must not expose SiasgFacil, gov.br, Compras.gov, CPF, UASG, cookies, tokens, storage, or bridge internals.
+
+## Workbench Coverage Matrix
+
+The Workbench lab must include these targets and at least one tutorial step for each supported group:
+
+| Area | Examples to prove |
+| --- | --- |
+| Dashboard | Page heading, page body, header actions, header widgets, footer widgets |
+| Page | Generic page target, custom schema components, collapsible section opened before target |
+| Resource | List table, table columns, table header action, row action, create/edit modal targets |
+| Relation/nested | Manage-related page or relation-like nested page with table target and parent context |
+| Navbar/topbar | Tutorial launcher, global search area, user menu/dropdown |
+| Sidebar | Sidebar nav start/end, navigation item, sidebar open pre-action |
+| Modal | Action button opens modal, modal window receives target, modal field/action receives target |
+| Dropdown menu | Pre-action opens dropdown before the target is resolved |
+| Infolist/schema/table | TextEntry/IconEntry, form input, table column/filter/action |
+| Widgets | Stats/chart/table-like widget target |
+| Dynamic visibility | Hidden/collapsed target becomes visible through pre-action before the step |
 
 <tasks>
 <task type="auto" tdd="false">
@@ -122,7 +149,7 @@ Implement the first usable tutorial runtime: a Filament-panel-scoped Driver.js l
     - workbench/app/Filament/*
   </files>
   <action>
-    Implement an MVP resolver for supported targets: current page, navigation item, page action/table action when a stable owner/action pair is available, and custom target. Use central configuration hooks where Filament exposes stable public extension points. Preserve existing host attributes when injecting `data-tour`. If a target cannot be materialized through a stable public API, keep it unsupported in code and document it as deferred instead of using private `.fi-*` selectors.
+    Implement an MVP resolver for supported targets: current page, navigation item, page action/table action when a stable owner/action pair is available, custom target, named render-hook target, and manual component target. Use central configuration hooks where Filament exposes stable public extension points. Preserve existing host attributes when injecting `data-tour`. If a target cannot be materialized through a stable public API, keep it supported only through explicit package-owned/manual `data-tour` attributes in the Workbench lab instead of using private `.fi-*` selectors.
   </action>
   <verify>
     <automated>./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Unit tests/Feature/StableTargetInjectionTest.php</automated>
@@ -141,7 +168,7 @@ Implement the first usable tutorial runtime: a Filament-panel-scoped Driver.js l
     - tests/Feature/TutorialRuntimePayloadTest.php
   </files>
   <action>
-    Add a generic page tutorial launcher that appears only when the current page has a tutorial. Starting a tutorial must destroy any existing Driver instance, resolve steps to `data-tour` selectors, skip or report missing targets according to the contract from Phase 001, and return focus to the launcher after close/done. Use `MutationObserver` for dynamic targets. Do not start feature-specific modals directly from the generic launcher.
+    Add a generic page tutorial launcher that appears only when the current page has a tutorial. Starting a tutorial must destroy any existing Driver instance, execute pre-actions for the current step, resolve steps to `data-tour` selectors, skip or report missing targets according to the contract from Phase 001, and return focus to the launcher after close/done. Use `MutationObserver` for dynamic targets. The generic launcher may execute step-owned pre-actions such as opening a modal/collapsible/sidebar/dropdown, but must not hard-code any consuming app feature.
   </action>
   <verify>
     <automated>./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Feature/TutorialRuntimePayloadTest.php</automated>
@@ -161,7 +188,7 @@ Implement the first usable tutorial runtime: a Filament-panel-scoped Driver.js l
     - tests/Architecture/RuntimeAssetContractTest.php
   </files>
   <action>
-    Style Driver.js for compact Filament-like light/dark UI, translated progress text such as `{{current}} de {{total}}`, button labels in pt_BR when used by SiasgFacil, visible focus through `:focus-visible`, keyboard support, reduced motion support, and no text overflow in the popover.
+    Style Driver.js for compact Filament modal-like light/dark UI, translated progress text such as `{{current}} de {{total}}`, button labels in pt_BR when used by SiasgFacil, visible focus through `:focus-visible`, keyboard support, reduced motion support, and no text overflow in the popover. The close button must look like Filament modal close chrome, previous must look secondary/gray, and next/done must look primary.
   </action>
   <verify>
     <automated>./packages/workbench/bin/sail npm run build</automated>
@@ -173,21 +200,39 @@ Implement the first usable tutorial runtime: a Filament-panel-scoped Driver.js l
 </task>
 
 <task type="auto" tdd="true">
-  <name>Task 6: Add browser smoke coverage for Workbench tutorial flow</name>
+  <name>Task 6: Build Workbench tutorial coverage lab</name>
   <files>
-    - composer.json
-    - tests/Browser/WorkbenchTutorialBrowserTest.php
-    - tests/Pest.php
     - workbench/*
+    - tests/Feature/WorkbenchTutorialCoverageTest.php
   </files>
   <action>
-    Add the browser testing dependency only if needed and approved by package support constraints. Cover the Workbench panel flow: visit the panel, confirm the tutorial launcher appears only on pages with tutorial data, open tutorial, assert localized progress, advance steps, close/done, assert no JavaScript errors, no console logs, no serious accessibility issues, and capture desktop and mobile screenshots.
+    Add a Workbench coverage lab that exercises dashboard, pages, resources, nested/relation-like pages, sidebar, topbar/global search, user dropdown, modals, collapsibles, infolists, schemas/forms, tables, widgets, and actions. Keep examples synthetic, institutional, and minimal. Each area must either have an automatically injected target or an explicit package-owned/manual `data-tour` target with a test proving it exists.
+  </action>
+  <verify>
+    <automated>./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Feature/WorkbenchTutorialCoverageTest.php</automated>
+  </verify>
+  <done>
+    Workbench has enough surface area to exercise every tutorial target class requested before the package is wired into SiasgFacil.
+  </done>
+</task>
+
+<task type="auto" tdd="true">
+  <name>Task 7: Add browser and visual coverage for Workbench tutorial flows</name>
+  <files>
+    - composer.json
+    - package.json
+    - tests/Browser/WorkbenchTutorialBrowserTest.php
+    - tests/Pest.php
+    - .gitignore
+  </files>
+  <action>
+    Add browser testing dependencies if not already present. Cover the Workbench panel flow: visit the dashboard, confirm the tutorial launcher appears only on pages with tutorial data, open tutorial, assert localized progress, advance steps across static and dynamic targets, verify modal/collapsible/dropdown pre-actions, close/done, assert no JavaScript errors, no console logs, no serious accessibility issues, and capture desktop, mobile, light, and dark screenshots for visual review.
   </action>
   <verify>
     <automated>./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Browser/WorkbenchTutorialBrowserTest.php</automated>
   </verify>
   <done>
-    Runtime behavior is proven in a real browser before the package is wired into SiasgFacil.
+    Runtime behavior is proven in a real browser with visual screenshots before the package is wired into SiasgFacil.
   </done>
 </task>
 </tasks>
@@ -200,5 +245,18 @@ Implement the first usable tutorial runtime: a Filament-panel-scoped Driver.js l
 ./packages/workbench/bin/sail npm run build
 ./packages/workbench/bin/sail php vendor/bin/pest --compact
 ./packages/workbench/bin/sail pint --dirty
-./packages/workbench/bin/sail phpstan --memory-limit=1G
+./packages/workbench/bin/sail php vendor/bin/phpstan analyse --memory-limit=1G
 ```
+
+## Execution Notes
+
+- Workbench Docker PHP image requires `sockets` for Pest Browser support.
+- Visual screenshots were generated by `tests/Browser/WorkbenchTutorialBrowserTest.php` for desktop, mobile, modal, and dark mode.
+- Final executed gates:
+  - `./packages/workbench/bin/sail composer validate --strict`
+  - `./packages/workbench/bin/sail npm run check`
+  - `./packages/workbench/bin/sail npm run build`
+  - `./packages/workbench/bin/sail composer run build`
+  - `./packages/workbench/bin/sail php vendor/bin/phpstan analyse --memory-limit=1G`
+  - `./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Unit tests/Feature tests/Architecture`
+  - `./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Browser/WorkbenchTutorialBrowserTest.php`

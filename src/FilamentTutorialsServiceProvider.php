@@ -7,6 +7,7 @@ namespace CoringaWc\FilamentTutorials;
 use CoringaWc\FilamentTutorials\Support\InlineTutorialCollector;
 use CoringaWc\FilamentTutorials\Support\TutorialDiscovery;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
+use CoringaWc\FilamentTutorials\Support\TutorialPayloadFactory;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -26,5 +27,6 @@ class FilamentTutorialsServiceProvider extends PackageServiceProvider
         $this->app->scoped(InlineTutorialCollector::class);
         $this->app->scoped(TutorialDiscovery::class);
         $this->app->scoped(TutorialManager::class);
+        $this->app->scoped(TutorialPayloadFactory::class);
     }
 }
