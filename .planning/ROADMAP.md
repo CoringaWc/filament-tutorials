@@ -2,21 +2,21 @@
 
 ## Phase 001: Core Plugin Contract
 
+Status: reviewed-ready-for-execution
+
+Harden the package skeleton, public PHP API, workbench setup, discovery model, inline Page/Resource contract, and release gates. The scaffold exists, but the GSD review found missing executable tasks; see `phase-001-filament-tutorials-core/REVIEWS.md` and the revised `PLAN.md`.
+
+## Phase 002: Runtime And Stable Targets
+
 Status: planned
 
-Define the package skeleton, public PHP API, workbench setup, discovery model, and first implementation plan.
+Register Driver.js assets through Filament panel/plugin conventions, expose one runtime bridge, render the page tutorial launcher, and prove stable `data-tour` target materialization for supported Filament primitives.
 
-## Phase 002: Runtime And Assets
-
-Status: pending
-
-Register Driver.js assets through Filament panel/plugin conventions, expose one runtime bridge, and render the page tutorial launcher.
-
-## Phase 003: Stable Target Injection
+## Phase 003: Expanded Target Injection
 
 Status: pending
 
-Inject predictable `data-tour` attributes for supported Filament primitives without requiring every resource/page to define `extraAttributes()` manually.
+Expand target support beyond the Phase 002 MVP: modals, profile menu, sidebar lifecycle, table/page actions with owners, and dynamic Livewire surfaces without requiring every resource/page to define `extraAttributes()` manually.
 
 ## Phase 004: Progress Persistence
 
@@ -29,4 +29,3 @@ Persist per-user completion, dismissal, restart, and auto-start state with packa
 Status: pending
 
 Prove workbench UI behavior with browser tests/screenshots and document package usage patterns.
-

@@ -25,7 +25,7 @@ use CoringaWc\FilamentTutorials\TutorialStep;
 
 final class ContractingListTutorial extends FilamentTutorial
 {
-    protected static string $page = ListContractingDrafts::class;
+    protected static ?string $page = ListContractingDrafts::class;
 
     public function steps(?array $steps = null): array|static
     {
@@ -41,15 +41,23 @@ final class ContractingListTutorial extends FilamentTutorial
 For a small page-only guide, return an inline tutorial from the page/resource:
 
 ```php
-public static function tutorials(): FilamentTutorial
+use CoringaWc\FilamentTutorials\Contracts\HasFilamentTutorials;
+use CoringaWc\FilamentTutorials\FilamentTutorial;
+use CoringaWc\FilamentTutorials\TutorialStep;
+use Filament\Pages\Page;
+
+final class ListContractingDrafts extends Page implements HasFilamentTutorials
 {
-    return FilamentTutorial::make()
-        ->steps([
-            TutorialStep::make('intro')
-                ->targetPage()
-                ->title('Overview')
-                ->description('See the main information on this page.'),
-        ]);
+    public static function tutorials(): FilamentTutorial
+    {
+        return FilamentTutorial::make()
+            ->steps([
+                TutorialStep::make('intro')
+                    ->targetPage()
+                    ->title('Overview')
+                    ->description('See the main information on this page.'),
+            ]);
+    }
 }
 ```
 
