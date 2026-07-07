@@ -22,4 +22,11 @@ return [
         'resource.list.table.before' => PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE,
         'resource.related.table.before' => PanelsRenderHook::RESOURCE_PAGES_MANAGE_RELATED_RECORDS_TABLE_BEFORE,
     ],
+
+    'progress' => [
+        'enabled' => true,
+        'table' => 'filament_tutorial_progress',
+        'route_path' => 'filament-tutorials/progress',
+        'middleware' => ['web'],
+    ],
 ];

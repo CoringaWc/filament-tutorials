@@ -172,6 +172,40 @@ const driverSteps = (tutorial) => {
     }))
 }
 
+const persistTutorialProgress = (runtime, tutorial, event, step = null, stepIndex = null) => {
+  const progress = runtimePayload(runtime).progress
+
+  if (!progress?.endpoint) {
+    return
+  }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  }
+
+  if (progress.csrfToken) {
+    headers['X-CSRF-TOKEN'] = progress.csrfToken
+  }
+
+  window.fetch(progress.endpoint, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers,
+    body: JSON.stringify({
+      panel_id: progress.panelId,
+      tutorial_key: tutorial.key,
+      event,
+      step_key: step?.key ?? null,
+      step_index: stepIndex,
+      metadata: {
+        source: 'runtime',
+        step_count: tutorial.steps?.length ?? 0,
+      },
+    }),
+  }).catch((error) => console.error(error))
+}
+
 const interactiveSelector = [
   'a',
   'button',
@@ -225,6 +259,7 @@ const startTutorial = async (runtime, tutorial) => {
 
   await runBeforeActions(availableSteps[0])
   await waitForStepTarget(availableSteps[0])
+  persistTutorialProgress(runtime, tutorial, 'started', availableSteps[0], 0)
 
   activeDriver = driver({
     allowClose: true,
@@ -257,9 +292,15 @@ const startTutorial = async (runtime, tutorial) => {
       window.requestAnimationFrame(() => normalizeDriverTargetAria())
     },
     onCloseClick: (_element, _step, { driver: currentDriver }) => {
+      const activeIndex = currentDriver.getActiveIndex() ?? 0
+
+      persistTutorialProgress(runtime, tutorial, 'dismissed', availableSteps[activeIndex], activeIndex)
       currentDriver.destroy()
     },
     onDoneClick: (_element, _step, { driver: currentDriver }) => {
+      const activeIndex = currentDriver.getActiveIndex() ?? availableSteps.length - 1
+
+      persistTutorialProgress(runtime, tutorial, 'completed', availableSteps[activeIndex], activeIndex)
       currentDriver.destroy()
     },
     onHighlighted: (element) => {

@@ -5,7 +5,13 @@ declare(strict_types=1);
 namespace CoringaWc\FilamentTutorials\Support;
 
 use CoringaWc\FilamentTutorials\FilamentTutorial;
+use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
+use Filament\Facades\Filament;
 use Filament\Pages\BasePage;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class TutorialPayloadFactory
 {
@@ -15,10 +21,12 @@ class TutorialPayloadFactory
 
     /**
      * @param  array<int, string>  $scopes
-     * @return array{labels: array<string, string>, tutorials: list<array<string, mixed>>}
+     * @return array{labels: array<string, string>, progress: array<string, mixed>|null, tutorials: list<array<string, mixed>>}
      */
     public function forPanelAndScopes(string $panelId, array $scopes): array
     {
+        $progressContext = $this->progressContext($panelId);
+
         return [
             'labels' => [
                 'next' => __('Próximo'),
@@ -26,8 +34,13 @@ class TutorialPayloadFactory
                 'done' => __('Concluir'),
                 'progress' => __('{{current}} de {{total}}'),
             ],
+            'progress' => $progressContext['endpoint'] === null ? null : [
+                'endpoint' => $progressContext['endpoint'],
+                'csrfToken' => csrf_token(),
+                'panelId' => $panelId,
+            ],
             'tutorials' => array_values(array_filter(array_map(
-                fn (FilamentTutorial $tutorial): ?array => $this->tutorialPayload($tutorial, $scopes),
+                fn (FilamentTutorial $tutorial): ?array => $this->tutorialPayload($tutorial, $scopes, $progressContext['progress'][$tutorial->getKey()] ?? null),
                 $this->tutorialManager->forPanel($panelId),
             ))),
         ];
@@ -37,7 +50,7 @@ class TutorialPayloadFactory
      * @param  array<int, string>  $scopes
      * @return array<string, mixed>|null
      */
-    private function tutorialPayload(FilamentTutorial $tutorial, array $scopes): ?array
+    private function tutorialPayload(FilamentTutorial $tutorial, array $scopes, ?FilamentTutorialProgress $progress): ?array
     {
         if (! $this->tutorialMatchesScopes($tutorial, $scopes)) {
             return null;
@@ -45,8 +58,12 @@ class TutorialPayloadFactory
 
         return [
             'key' => $tutorial->getKey(),
-            'autoStart' => $tutorial->shouldAutoStart(),
+            'autoStart' => $tutorial->shouldAutoStart() && ! in_array($progress?->status, [
+                FilamentTutorialProgress::StatusCompleted,
+                FilamentTutorialProgress::StatusDismissed,
+            ], true),
             'adapter' => $tutorial->getAdapter(),
+            'progressStatus' => $progress?->status,
             'steps' => array_map(
                 fn (array $step): array => [
                     ...$step,
@@ -112,5 +129,56 @@ class TutorialPayloadFactory
         }
 
         return null;
+    }
+
+    /**
+     * @return array{endpoint: string|null, progress: array<string, FilamentTutorialProgress>}
+     */
+    private function progressContext(string $panelId): array
+    {
+        if (! (bool) config('filament-tutorials.progress.enabled', true)) {
+            return [
+                'endpoint' => null,
+                'progress' => [],
+            ];
+        }
+
+        $authUser = $this->authenticatedUser();
+
+        if (! $authUser instanceof Authenticatable || ! $this->progressTableExists() || ! Route::has('filament-tutorials.progress')) {
+            return [
+                'endpoint' => null,
+                'progress' => [],
+            ];
+        }
+
+        $progress = FilamentTutorialProgress::query()
+            ->where('user_type', $authUser::class)
+            ->where('user_id', (string) $authUser->getAuthIdentifier())
+            ->where('panel_id', $panelId)
+            ->get()
+            ->keyBy('tutorial_key')
+            ->all();
+
+        return [
+            'endpoint' => route('filament-tutorials.progress', absolute: false),
+            'progress' => $progress,
+        ];
+    }
+
+    private function progressTableExists(): bool
+    {
+        return Schema::hasTable(config('filament-tutorials.progress.table', 'filament_tutorial_progress'));
+    }
+
+    private function authenticatedUser(): ?Authenticatable
+    {
+        try {
+            $user = Filament::auth()->user();
+        } catch (Throwable) {
+            $user = auth()->user();
+        }
+
+        return $user instanceof Authenticatable ? $user : null;
     }
 }

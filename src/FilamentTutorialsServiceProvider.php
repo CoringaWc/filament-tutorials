@@ -19,7 +19,9 @@ class FilamentTutorialsServiceProvider extends PackageServiceProvider
     {
         $package->name(static::$name)
             ->hasConfigFile()
-            ->hasViews();
+            ->hasViews()
+            ->hasMigration('create_filament_tutorial_progress_table')
+            ->hasRoute('web');
     }
 
     public function packageRegistered(): void

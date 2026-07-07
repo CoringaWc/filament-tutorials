@@ -20,7 +20,7 @@ Expand target support beyond the Phase 002 MVP: modals, profile menu, sidebar li
 
 ## Phase 004: Progress Persistence
 
-Status: pending
+Status: completed
 
 Persist per-user completion, dismissal, restart, and auto-start state with package migrations and action-style workflow boundaries.
 
