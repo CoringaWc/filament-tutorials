@@ -9,6 +9,23 @@ uses(RefreshDatabase::class);
 it('runs the dashboard tutorial across static and dynamic targets', function (): void {
     $page = visit('/admin')
         ->assertVisible('[data-filament-tutorials-launcher]')
+        ->assertVisible('.fi-user-menu')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const launcher = document.querySelector('[data-filament-tutorials-launcher]')?.getBoundingClientRect()
+                    const userMenu = document.querySelector('.fi-user-menu')?.getBoundingClientRect()
+
+                    return Boolean(
+                        launcher &&
+                        userMenu &&
+                        launcher.right <= userMenu.left + 8 &&
+                        Math.abs(launcher.top - userMenu.top) <= 12
+                    )
+                })()
+            JS,
+            true,
+        )
         ->assertScript('document.querySelector("[data-filament-tutorials-launcher]")?.dataset.filamentTutorialsBooted', 'true')
         ->assertScript('Boolean(document.querySelector("[data-filament-tutorials-launcher]")?._x_dataStack?.length)', true)
         ->assertScript('JSON.parse(document.querySelector("[data-filament-tutorials-runtime]").dataset.payload).tutorials.length > 0', true)

@@ -13,7 +13,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -22,6 +21,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
 use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
+use Workbench\App\Http\Middleware\AuthenticateWorkbenchUser;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -45,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                AuthenticateWorkbenchUser::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
@@ -55,7 +56,6 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([])
             ->plugins([
                 FilamentTutorialsPlugin::make()
-                    ->launcherRenderHook(PanelsRenderHook::TOPBAR_START)
                     ->discoverTutorials(
                         in: dirname(__DIR__, 2).'/Filament/Admin/Tutorials',
                         for: 'Workbench\\App\\Filament\\Admin\\Tutorials',

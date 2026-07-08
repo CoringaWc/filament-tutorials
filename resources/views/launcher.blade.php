@@ -9,6 +9,5 @@
     x-on:click="start"
     data-filament-tutorials-launcher
     data-tour="tutorial.launcher"
-    class="me-2"
     hidden
 />

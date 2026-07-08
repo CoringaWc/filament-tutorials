@@ -18,6 +18,8 @@ it('renders dashboard tutorial runtime and stable coverage targets', function ()
         ->assertOk()
         ->assertSee('data-filament-tutorials-runtime', false)
         ->assertSee('data-filament-tutorials-launcher', false)
+        ->assertSee('fi-icon-btn', false)
+        ->assertSee('fi-user-menu', false)
         ->assertSee('x-data="filamentTutorialsLauncher"', false)
         ->assertSee('data-tour="workbench.dashboard.body"', false)
         ->assertSee('data-tour="workbench.schema.card"', false)
@@ -27,6 +29,7 @@ it('renders dashboard tutorial runtime and stable coverage targets', function ()
         ->assertSee('data-tour="workbench.collapsible.trigger"', false)
         ->assertSee('data-tour="filament-tutorials.render-hook.page.header-widgets.before"', false)
         ->assertSee('data-tour="filament-tutorials.render-hook.global-search.before"', false)
+        ->assertSee('data-tour="filament-tutorials.render-hook.user-menu.before"', false)
         ->assertSee('data-tour="filament-tutorials.render-hook.sidebar.nav.start"', false);
 });
 
