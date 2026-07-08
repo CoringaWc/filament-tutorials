@@ -43,6 +43,14 @@ class FilamentTutorialsPlugin implements Plugin
 
     protected ?string $launcherTooltip = null;
 
+    protected ?bool $isDismissalReminderEnabled = null;
+
+    protected ?string $dismissalReminderSkipLabel = null;
+
+    protected ?string $dismissalReminderTitle = null;
+
+    protected ?string $dismissalReminderDescription = null;
+
     public static function make(): static
     {
         return app(static::class);
@@ -138,6 +146,36 @@ class FilamentTutorialsPlugin implements Plugin
     public function launcherTooltip(?string $tooltip): static
     {
         $this->launcherTooltip = $tooltip;
+
+        return $this;
+    }
+
+    public function dismissalReminder(
+        bool $enabled = true,
+        ?string $skipLabel = null,
+        ?string $title = null,
+        ?string $description = null,
+    ): static {
+        $this->isDismissalReminderEnabled = $enabled;
+
+        if ($skipLabel !== null) {
+            $this->dismissalReminderSkipLabel = $skipLabel;
+        }
+
+        if ($title !== null) {
+            $this->dismissalReminderTitle = $title;
+        }
+
+        if ($description !== null) {
+            $this->dismissalReminderDescription = $description;
+        }
+
+        return $this;
+    }
+
+    public function withoutDismissalReminder(): static
+    {
+        $this->isDismissalReminderEnabled = false;
 
         return $this;
     }
@@ -341,6 +379,44 @@ class FilamentTutorialsPlugin implements Plugin
         }
 
         return rtrim($url, '/');
+    }
+
+    /**
+     * @return array{enabled: bool, selector: string, stepKey: string, skipLabel: string, title: string, description: string}
+     */
+    public function getDismissalReminderPayload(): array
+    {
+        return [
+            'enabled' => $this->isDismissalReminderEnabled(),
+            'selector' => '[data-tour="tutorial.launcher"]',
+            'stepKey' => (string) config('filament-tutorials.dismissal_reminder.step_key', 'reopen-page-tutorial'),
+            'skipLabel' => $this->getDismissalReminderSkipLabel(),
+            'title' => $this->getDismissalReminderTitle(),
+            'description' => $this->getDismissalReminderDescription(),
+        ];
+    }
+
+    public function isDismissalReminderEnabled(): bool
+    {
+        return $this->isLauncherEnabled() && ($this->isDismissalReminderEnabled ?? (bool) config('filament-tutorials.dismissal_reminder.enabled', true));
+    }
+
+    protected function getDismissalReminderSkipLabel(): string
+    {
+        return $this->dismissalReminderSkipLabel
+            ?? (string) config('filament-tutorials.dismissal_reminder.skip_label', __('Ignorar'));
+    }
+
+    protected function getDismissalReminderTitle(): string
+    {
+        return $this->dismissalReminderTitle
+            ?? (string) config('filament-tutorials.dismissal_reminder.title', __('Você pode voltar quando quiser'));
+    }
+
+    protected function getDismissalReminderDescription(): string
+    {
+        return $this->dismissalReminderDescription
+            ?? (string) config('filament-tutorials.dismissal_reminder.description', __('Para rever este guia, clique no ícone de interrogação no topo da página.'));
     }
 
     protected function isLauncherEnabled(): bool

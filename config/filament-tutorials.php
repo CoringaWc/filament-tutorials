@@ -21,6 +21,14 @@ return [
 
     'launcher_render_hook' => null,
 
+    'dismissal_reminder' => [
+        'enabled' => true,
+        'step_key' => 'reopen-page-tutorial',
+        'skip_label' => 'Ignorar',
+        'title' => 'Você pode voltar quando quiser',
+        'description' => 'Para rever este guia, clique no ícone de interrogação no topo da página.',
+    ],
+
     'render_hook_targets' => [
         'global-search.before' => PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
         'sidebar.nav.start' => PanelsRenderHook::SIDEBAR_NAV_START,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CoringaWc\FilamentTutorials\Support;
 
 use CoringaWc\FilamentTutorials\FilamentTutorial;
+use CoringaWc\FilamentTutorials\FilamentTutorialsPlugin;
 use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
 use Filament\Facades\Filament;
 use Filament\Pages\BasePage;
@@ -21,7 +22,7 @@ class TutorialPayloadFactory
 
     /**
      * @param  array<int, string>  $scopes
-     * @return array{labels: array<string, string>, progress: array<string, mixed>|null, tutorials: list<array<string, mixed>>}
+     * @return array{labels: array<string, string>, dismissalReminder: array<string, mixed>, progress: array<string, mixed>|null, tutorials: list<array<string, mixed>>}
      */
     public function forPanelAndScopes(string $panelId, array $scopes): array
     {
@@ -34,6 +35,7 @@ class TutorialPayloadFactory
                 'done' => __('Concluir'),
                 'progress' => __('{{current}} de {{total}}'),
             ],
+            'dismissalReminder' => $this->dismissalReminderPayload($panelId),
             'progress' => $progressContext['endpoint'] === null ? null : [
                 'endpoint' => $progressContext['endpoint'],
                 'csrfToken' => csrf_token(),
@@ -43,6 +45,28 @@ class TutorialPayloadFactory
                 fn (FilamentTutorial $tutorial): ?array => $this->tutorialPayload($tutorial, $scopes, $progressContext['progress'][$tutorial->getKey()] ?? null),
                 $this->tutorialManager->forPanel($panelId),
             ))),
+        ];
+    }
+
+    /**
+     * @return array{enabled: bool, selector: string, stepKey: string, skipLabel: string, title: string, description: string}
+     */
+    private function dismissalReminderPayload(string $panelId): array
+    {
+        $panel = Filament::getPanel($panelId, false);
+        $plugin = $panel->hasPlugin('filament-tutorials') ? $panel->getPlugin('filament-tutorials') : null;
+
+        if ($plugin instanceof FilamentTutorialsPlugin) {
+            return $plugin->getDismissalReminderPayload();
+        }
+
+        return [
+            'enabled' => (bool) config('filament-tutorials.dismissal_reminder.enabled', true),
+            'selector' => '[data-tour="tutorial.launcher"]',
+            'stepKey' => (string) config('filament-tutorials.dismissal_reminder.step_key', 'reopen-page-tutorial'),
+            'skipLabel' => (string) config('filament-tutorials.dismissal_reminder.skip_label', __('Ignorar')),
+            'title' => (string) config('filament-tutorials.dismissal_reminder.title', __('Você pode voltar quando quiser')),
+            'description' => (string) config('filament-tutorials.dismissal_reminder.description', __('Para rever este guia, clique no ícone de interrogação no topo da página.')),
         ];
     }
 

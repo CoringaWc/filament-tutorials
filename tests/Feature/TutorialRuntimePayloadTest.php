@@ -21,6 +21,15 @@ it('builds localized payload for the current page scope only', function (): void
             'progress' => '{{current}} de {{total}}',
         ]);
 
+    expect($payload['dismissalReminder'])
+        ->toMatchArray([
+            'enabled' => true,
+            'selector' => '[data-tour="tutorial.launcher"]',
+            'stepKey' => 'reopen-page-tutorial',
+            'skipLabel' => 'Ignorar',
+            'title' => 'Você pode voltar quando quiser',
+        ]);
+
     $tutorialKeys = array_map(
         static fn (array $tutorial): mixed => $tutorial['key'] ?? null,
         $payload['tutorials'],

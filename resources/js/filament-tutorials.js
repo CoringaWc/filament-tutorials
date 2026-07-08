@@ -158,22 +158,55 @@ const waitForStepTarget = async (step) => {
   await waitForElement(step.selector)
 }
 
-const driverSteps = (tutorial) => {
-  return (tutorial.steps ?? [])
-    .filter((step) => step.selector)
-    .map((step) => ({
-      element: step.selector,
-      popover: {
-        title: step.title,
-        description: step.description,
-      },
-      onDeselected: () => {
-        runAfterActions(step).catch((error) => console.error(error))
-      },
-    }))
+const dismissalReminderStep = (runtime) => {
+  const reminder = runtimePayload(runtime).dismissalReminder
+
+  if (!reminder?.enabled || !reminder?.selector) {
+    return null
+  }
+
+  return {
+    key: reminder.stepKey ?? 'reopen-page-tutorial',
+    selector: reminder.selector,
+    title: reminder.title,
+    description: reminder.description,
+    before: [],
+    after: [],
+    dismissalReminder: true,
+  }
 }
 
-const persistTutorialProgress = (runtime, tutorial, event, step = null, stepIndex = null) => {
+const tutorialSteps = (tutorial) => (tutorial.steps ?? []).filter((step) => step.selector)
+
+const driverStep = (step) => ({
+  element: step.selector,
+  popover: {
+    title: step.title,
+    description: step.description,
+  },
+  onDeselected: () => {
+    runAfterActions(step).catch((error) => console.error(error))
+  },
+})
+
+const driverSteps = (steps) => steps.map((step) => driverStep(step))
+
+const addDismissalReminderButton = (popover, label, onClick) => {
+  if (popover.footerButtons.querySelector('[data-filament-tutorials-skip]')) {
+    return
+  }
+
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.textContent = label
+  button.dataset.filamentTutorialsSkip = 'true'
+  button.classList.add('driver-popover-footer-btn', 'filament-tutorials-skip-btn')
+  button.addEventListener('click', onClick)
+
+  popover.footerButtons.prepend(button)
+}
+
+const persistTutorialProgress = (runtime, tutorial, event, step = null, stepIndex = null, stepCount = null) => {
   const progress = runtimePayload(runtime).progress
 
   if (!progress?.endpoint) {
@@ -201,7 +234,7 @@ const persistTutorialProgress = (runtime, tutorial, event, step = null, stepInde
       step_index: stepIndex,
       metadata: {
         source: 'runtime',
-        step_count: tutorial.steps?.length ?? 0,
+        step_count: stepCount ?? tutorial.steps?.length ?? 0,
       },
     }),
   }).catch((error) => console.error(error))
@@ -250,17 +283,88 @@ const startTutorial = async (runtime, tutorial) => {
   destroyActiveDriver()
 
   const launcher = document.querySelector(launcherSelector)
-  const labels = runtimePayload(runtime).labels
-  const availableSteps = (tutorial.steps ?? []).filter((step) => step.selector)
-  const steps = driverSteps(tutorial)
+  const payload = runtimePayload(runtime)
+  const labels = payload.labels
+  const dismissalReminder = payload.dismissalReminder
+  const originalStepCount = tutorialSteps(tutorial).length
+  const reminderStep = dismissalReminderStep(runtime)
+  let activeSteps = tutorialSteps(tutorial)
+  let steps = driverSteps(activeSteps)
+  let dismissalReminderActive = false
 
   if (steps.length === 0) {
     return
   }
 
-  await runBeforeActions(availableSteps[0])
-  await waitForStepTarget(availableSteps[0])
-  persistTutorialProgress(runtime, tutorial, 'started', availableSteps[0], 0)
+  await runBeforeActions(activeSteps[0])
+  await waitForStepTarget(activeSteps[0])
+  persistTutorialProgress(runtime, tutorial, 'started', activeSteps[0], 0, originalStepCount)
+
+  const ensureDismissalReminderIndex = async (currentDriver) => {
+    const existingIndex = activeSteps.findIndex((step) => step.dismissalReminder)
+
+    if (existingIndex >= 0) {
+      return existingIndex
+    }
+
+    if (!reminderStep) {
+      return -1
+    }
+
+    await runBeforeActions(reminderStep)
+    await waitForStepTarget(reminderStep)
+
+    dismissalReminderActive = true
+    activeSteps = [...activeSteps, reminderStep]
+    steps = driverSteps(activeSteps)
+    steps[steps.length - 1] = {
+      ...steps[steps.length - 1],
+      popover: {
+        ...steps[steps.length - 1].popover,
+        nextBtnText: labels.done,
+        showButtons: ['next'],
+      },
+    }
+
+    currentDriver.setConfig({
+      ...currentDriver.getConfig(),
+      steps,
+    })
+
+    return activeSteps.length - 1
+  }
+
+  const showDismissalReminder = async (currentDriver) => {
+    const activeIndex = currentDriver.getActiveIndex() ?? 0
+    const activeStep = activeSteps[activeIndex]
+
+    if (activeStep?.dismissalReminder || dismissalReminderActive) {
+      return false
+    }
+
+    const reminderIndex = await runAfterActions(activeStep)
+      .then(() => ensureDismissalReminderIndex(currentDriver))
+
+    if (reminderIndex < 0) {
+      return false
+    }
+
+    currentDriver.moveTo(reminderIndex)
+    window.requestAnimationFrame(() => normalizeDriverTargetAria())
+
+    return true
+  }
+
+  const finishDismissedTutorial = (currentDriver) => {
+    const activeIndex = currentDriver.getActiveIndex() ?? 0
+    const activeStep = activeSteps[activeIndex]
+
+    runAfterActions(activeStep)
+      .finally(() => {
+        persistTutorialProgress(runtime, tutorial, 'dismissed', activeStep, activeIndex, originalStepCount)
+        currentDriver.destroy()
+      })
+  }
 
   activeDriver = driver({
     allowClose: true,
@@ -272,10 +376,25 @@ const startTutorial = async (runtime, tutorial) => {
     showButtons: ['close', 'previous', 'next'],
     showProgress: true,
     steps,
+    onPopoverRender: (popover, { driver: currentDriver }) => {
+      if (dismissalReminder?.skipLabel) {
+        popover.closeButton.setAttribute('aria-label', dismissalReminder.skipLabel)
+        popover.closeButton.setAttribute('title', dismissalReminder.skipLabel)
+      }
+
+      if (!reminderStep || (currentDriver.getActiveIndex() ?? 0) !== 0) {
+        return
+      }
+
+      addDismissalReminderButton(popover, dismissalReminder.skipLabel, () => {
+        showDismissalReminder(currentDriver)
+          .catch((error) => console.error(error))
+      })
+    },
     onNextClick: (_element, _step, { driver: currentDriver }) => {
       const activeIndex = currentDriver.getActiveIndex() ?? 0
-      const activeStep = availableSteps[activeIndex]
-      const nextStep = availableSteps[activeIndex + 1]
+      const activeStep = activeSteps[activeIndex]
+      const nextStep = activeSteps[activeIndex + 1]
 
       if (!nextStep) {
         currentDriver.destroy()
@@ -295,24 +414,37 @@ const startTutorial = async (runtime, tutorial) => {
       window.requestAnimationFrame(() => normalizeDriverTargetAria())
     },
     onCloseClick: (_element, _step, { driver: currentDriver }) => {
-      const activeIndex = currentDriver.getActiveIndex() ?? 0
-      const activeStep = availableSteps[activeIndex]
+      showDismissalReminder(currentDriver)
+        .then((shown) => {
+          if (shown) {
+            return
+          }
+
+          finishDismissedTutorial(currentDriver)
+        })
+        .catch((error) => console.error(error))
+    },
+    onDoneClick: (_element, _step, { driver: currentDriver }) => {
+      const activeIndex = currentDriver.getActiveIndex() ?? activeSteps.length - 1
+      const activeStep = activeSteps[activeIndex]
+      const event = activeStep?.dismissalReminder && dismissalReminderActive ? 'dismissed' : 'completed'
 
       runAfterActions(activeStep)
         .finally(() => {
-          persistTutorialProgress(runtime, tutorial, 'dismissed', activeStep, activeIndex)
+          persistTutorialProgress(runtime, tutorial, event, activeStep, activeIndex, originalStepCount)
           currentDriver.destroy()
         })
     },
-    onDoneClick: (_element, _step, { driver: currentDriver }) => {
-      const activeIndex = currentDriver.getActiveIndex() ?? availableSteps.length - 1
-      const activeStep = availableSteps[activeIndex]
+    onDestroyStarted: (_element, _step, { driver: currentDriver }) => {
+      showDismissalReminder(currentDriver)
+        .then((shown) => {
+          if (shown) {
+            return
+          }
 
-      runAfterActions(activeStep)
-        .finally(() => {
-          persistTutorialProgress(runtime, tutorial, 'completed', activeStep, activeIndex)
-          currentDriver.destroy()
+          finishDismissedTutorial(currentDriver)
         })
+        .catch((error) => console.error(error))
     },
     onHighlighted: (element) => {
       normalizeDriverTargetAria(element)

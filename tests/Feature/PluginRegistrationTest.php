@@ -43,3 +43,33 @@ it('uses the user menu launcher position by default', function (): void {
         ->and(config('filament-tutorials.launcher_render_hook'))
         ->toBeNull();
 });
+
+it('enables dismissal reminder by default and allows panel-level overrides', function (): void {
+    expect(config('filament-tutorials.dismissal_reminder'))
+        ->toMatchArray([
+            'enabled' => true,
+            'step_key' => 'reopen-page-tutorial',
+            'skip_label' => 'Ignorar',
+            'title' => 'Você pode voltar quando quiser',
+            'description' => 'Para rever este guia, clique no ícone de interrogação no topo da página.',
+        ]);
+
+    $plugin = FilamentTutorialsPlugin::make()
+        ->dismissalReminder(
+            skipLabel: 'Agora não',
+            title: 'Retome quando precisar',
+            description: 'Abra novamente pelo botão de ajuda.',
+        );
+
+    expect($plugin->getDismissalReminderPayload())
+        ->toMatchArray([
+            'enabled' => true,
+            'selector' => '[data-tour="tutorial.launcher"]',
+            'stepKey' => 'reopen-page-tutorial',
+            'skipLabel' => 'Agora não',
+            'title' => 'Retome quando precisar',
+            'description' => 'Abra novamente pelo botão de ajuda.',
+        ])
+        ->and($plugin->withoutDismissalReminder()->getDismissalReminderPayload()['enabled'])
+        ->toBeFalse();
+});

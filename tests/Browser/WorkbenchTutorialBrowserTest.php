@@ -39,6 +39,7 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertScript('document.body.classList.contains("driver-active")', true)
         ->assertSee('Painel do laboratório')
         ->assertSee('1 de 12')
+        ->assertSee('Ignorar')
         ->assertScript(
             <<<'JS'
                 (() => {
@@ -101,6 +102,8 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->wait(1)
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
+        ->assertDontSee('Você pode voltar quando quiser')
+        ->assertScript('document.body.classList.contains("driver-active")', false)
         ->assertNotPresent('[data-lab-dropdown-menu]:not([hidden])')
         ->assertNotPresent('[data-lab-profile-menu]:not([hidden])')
         ->assertNotPresent('[data-lab-collapsible-panel]:not([hidden])')
@@ -117,6 +120,7 @@ it('keeps the tutorial launcher and popover usable on mobile and dark mode', fun
         ->click('[data-filament-tutorials-launcher]')
         ->wait(1)
         ->assertSee('Painel do laboratório')
+        ->assertSee('Ignorar')
         ->click('.driver-popover-next-btn')
         ->wait(1)
         ->assertSee('Menu lateral')
@@ -143,4 +147,52 @@ it('keeps the tutorial launcher and popover usable on mobile and dark mode', fun
         ->screenshot(filename: 'tutorial-dashboard-dark')
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs();
+});
+
+it('lets the user skip from the first popover to the final launcher reminder', function (): void {
+    visit('/admin')
+        ->assertVisible('[data-filament-tutorials-launcher]')
+        ->click('[data-filament-tutorials-launcher]')
+        ->wait(1)
+        ->assertSee('Painel do laboratório')
+        ->assertSee('Ignorar')
+        ->click('[data-filament-tutorials-skip]')
+        ->wait(1)
+        ->assertSee('Você pode voltar quando quiser')
+        ->assertSee('Para rever este guia, clique no ícone de interrogação no topo da página.')
+        ->assertScript(
+            <<<'JS'
+                document.querySelector('.driver-active-element')?.dataset.tour === 'tutorial.launcher'
+            JS,
+            true,
+        )
+        ->screenshot(filename: 'tutorial-dashboard-skip-reminder')
+        ->click('.driver-popover-next-btn')
+        ->wait(1)
+        ->assertNoJavaScriptErrors()
+        ->assertNoConsoleLogs()
+        ->assertScript('document.body.classList.contains("driver-active")', false);
+});
+
+it('shows the launcher reminder when the first popover is closed', function (): void {
+    visit('/admin')
+        ->assertVisible('[data-filament-tutorials-launcher]')
+        ->click('[data-filament-tutorials-launcher]')
+        ->wait(1)
+        ->assertSee('Painel do laboratório')
+        ->click('.driver-popover-close-btn')
+        ->wait(1)
+        ->assertSee('Você pode voltar quando quiser')
+        ->assertSee('Para rever este guia, clique no ícone de interrogação no topo da página.')
+        ->assertScript(
+            <<<'JS'
+                document.querySelector('.driver-active-element')?.dataset.tour === 'tutorial.launcher'
+            JS,
+            true,
+        )
+        ->click('.driver-popover-next-btn')
+        ->wait(1)
+        ->assertNoJavaScriptErrors()
+        ->assertNoConsoleLogs()
+        ->assertScript('document.body.classList.contains("driver-active")', false);
 });
