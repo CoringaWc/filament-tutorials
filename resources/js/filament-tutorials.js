@@ -133,6 +133,7 @@ const runAction = async (action) => {
       return
     }
 
+    window.Alpine?.store('sidebar')?.open?.()
     document.dispatchEvent(new CustomEvent('filament-tutorials:open-sidebar'))
   }
 }

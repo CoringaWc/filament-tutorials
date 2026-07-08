@@ -100,9 +100,10 @@ class TutorialRecordResource extends Resource implements HasFilamentTutorials
             ->forPage(static::class)
             ->steps([
                 TutorialStep::make('resource-navigation')
-                    ->targetRenderHook('sidebar.nav.start')
+                    ->targetNavigation(static::class)
                     ->title('Navegação do módulo')
-                    ->description('Use a navegação lateral para acessar as áreas do painel.'),
+                    ->description('Use a navegação lateral para acessar as áreas do painel.')
+                    ->beforeOpenSidebar(),
             ]);
     }
 

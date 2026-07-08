@@ -306,6 +306,11 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                     ->target('workbench.dashboard.intro')
                     ->title('Painel do laboratório')
                     ->description('Esta página mostra como um tutorial pode guiar áreas comuns do painel.'),
+                TutorialStep::make('sidebar-navigation')
+                    ->targetNavigation(static::class)
+                    ->title('Menu lateral')
+                    ->description('O menu lateral pode ser aberto antes do destaque para orientar a navegação.')
+                    ->beforeOpenSidebar(),
                 TutorialStep::make('global-search')
                     ->target('tutorial.launcher')
                     ->title('Botão de ajuda')

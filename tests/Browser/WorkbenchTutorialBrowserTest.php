@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Workbench\App\Filament\Pages\WorkbenchDashboard;
 
 uses(RefreshDatabase::class);
 
@@ -36,7 +38,7 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertNoConsoleLogs()
         ->assertScript('document.body.classList.contains("driver-active")', true)
         ->assertSee('Painel do laboratório')
-        ->assertSee('1 de 11')
+        ->assertSee('1 de 12')
         ->assertScript(
             <<<'JS'
                 (() => {
@@ -48,6 +50,18 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
                         && rect.height > 100
                 })()
             JS,
+            true,
+        )
+        ->click('.driver-popover-next-btn')
+        ->assertSee('Menu lateral')
+        ->assertSee('2 de 12')
+        ->assertScript(
+            sprintf(
+                <<<'JS'
+                    document.querySelector('.driver-active-element')?.dataset.tour === '%s'
+                JS,
+                TutorialTargetKeys::navigation(WorkbenchDashboard::class),
+            ),
             true,
         )
         ->click('.driver-popover-next-btn')
@@ -99,9 +113,23 @@ it('keeps the tutorial launcher and popover usable on mobile and dark mode', fun
         ->assertVisible('[data-filament-tutorials-launcher]')
         ->assertScript('document.querySelector("[data-filament-tutorials-launcher]")?.dataset.filamentTutorialsBooted', 'true')
         ->assertScript('Boolean(document.querySelector("[data-filament-tutorials-launcher]")?._x_dataStack?.length)', true)
+        ->assertScript('window.Alpine.store("sidebar").isOpen', false)
         ->click('[data-filament-tutorials-launcher]')
         ->wait(1)
         ->assertSee('Painel do laboratório')
+        ->click('.driver-popover-next-btn')
+        ->wait(1)
+        ->assertSee('Menu lateral')
+        ->assertScript('window.Alpine.store("sidebar").isOpen', true)
+        ->assertScript(
+            sprintf(
+                <<<'JS'
+                    document.querySelector('.driver-active-element')?.dataset.tour === '%s'
+                JS,
+                TutorialTargetKeys::navigation(WorkbenchDashboard::class),
+            ),
+            true,
+        )
         ->screenshot(filename: 'tutorial-dashboard-mobile');
 
     visit('/admin')

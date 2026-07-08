@@ -12,7 +12,10 @@ use CoringaWc\FilamentTutorials\Support\TutorialPayloadFactory;
 use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
+use Filament\Navigation\NavigationItem;
+use Filament\Pages\Page;
 use Filament\Panel;
+use Filament\Resources\Resource;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentView;
@@ -173,6 +176,7 @@ class FilamentTutorialsPlugin implements Plugin
         $this->registerLauncherHook($panel);
         $this->registerPageTargetHook($panel);
         $this->registerConfiguredRenderHookTargets($panel);
+        $this->registerNavigationTargetAttributes($panel);
     }
 
     /**
@@ -282,6 +286,61 @@ class FilamentTutorialsPlugin implements Plugin
                 },
             );
         }
+    }
+
+    protected function registerNavigationTargetAttributes(Panel $panel): void
+    {
+        NavigationItem::configureUsing(function (NavigationItem $item) use ($panel): void {
+            $item->extraAttributes(function () use ($item, $panel): array {
+                if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
+                    return [];
+                }
+
+                $target = $this->navigationTargetForItem($item, $panel);
+
+                return $target === null ? [] : ['data-tour' => $target];
+            }, merge: true);
+        });
+    }
+
+    protected function navigationTargetForItem(NavigationItem $item, Panel $panel): ?string
+    {
+        $url = $this->normalizeNavigationUrl($item->getUrl());
+
+        if ($url === null) {
+            return null;
+        }
+
+        foreach ($panel->getPages() as $page) {
+            if (! is_subclass_of($page, Page::class)) {
+                continue;
+            }
+
+            if ($url === $this->normalizeNavigationUrl($page::getNavigationUrl())) {
+                return TutorialTargetKeys::navigation($page);
+            }
+        }
+
+        foreach ($panel->getResources() as $resource) {
+            if (! is_subclass_of($resource, Resource::class)) {
+                continue;
+            }
+
+            if ($url === $this->normalizeNavigationUrl($resource::getNavigationUrl())) {
+                return TutorialTargetKeys::navigation($resource);
+            }
+        }
+
+        return null;
+    }
+
+    protected function normalizeNavigationUrl(?string $url): ?string
+    {
+        if (blank($url)) {
+            return null;
+        }
+
+        return rtrim($url, '/');
     }
 
     protected function isLauncherEnabled(): bool

@@ -41,8 +41,18 @@ it('builds localized payload for the current page scope only', function (): void
 
     expect($dashboardSelectors)
         ->toContain('[data-tour="workbench.dashboard.intro"]')
+        ->toContain(sprintf('[data-tour="%s"]', TutorialTargetKeys::navigation(WorkbenchDashboard::class)))
         ->toContain('[data-tour="tutorial.launcher"]')
         ->toContain(sprintf('[data-tour="%s"]', TutorialTargetKeys::component('workbench.widget.stats')));
+
+    $navigationStep = collect(is_array($dashboardTutorial['steps'] ?? null) ? $dashboardTutorial['steps'] : [])
+        ->firstWhere('key', 'sidebar-navigation');
+
+    expect($navigationStep)->toBeArray()
+        ->and($navigationStep['before'] ?? [])->toContain([
+            'action' => 'sidebar.open',
+            'parameters' => [],
+        ]);
 });
 
 it('resolves stable selectors for page action and render hook targets', function (): void {

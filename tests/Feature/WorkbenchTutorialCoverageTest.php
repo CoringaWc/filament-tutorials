@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Workbench\App\Filament\Pages\WorkbenchDashboard;
 use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
 use Workbench\App\Models\TutorialRecord;
 
@@ -21,6 +22,8 @@ it('renders dashboard tutorial runtime and stable coverage targets', function ()
         ->assertSee('fi-icon-btn', false)
         ->assertSee('fi-user-menu', false)
         ->assertSee('x-data="filamentTutorialsLauncher"', false)
+        ->assertSee(sprintf('data-tour="%s"', TutorialTargetKeys::navigation(WorkbenchDashboard::class)), false)
+        ->assertSee(sprintf('data-tour="%s"', TutorialTargetKeys::navigation(TutorialRecordResource::class)), false)
         ->assertSee('data-tour="workbench.dashboard.intro"', false)
         ->assertSee('data-tour="workbench.dashboard.body"', false)
         ->assertSee('data-tour="workbench.schema.card"', false)
