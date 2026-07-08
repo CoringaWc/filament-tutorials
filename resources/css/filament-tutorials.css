@@ -1,6 +1,6 @@
 @import "driver.js/dist/driver.css";
 
-.driver-popover {
+.driver-popover.filament-tutorials-popover {
   border: 1px solid rgb(229 231 235);
   border-radius: 0.75rem;
   background: rgb(255 255 255);
@@ -12,32 +12,32 @@
   padding: 1rem;
 }
 
-.driver-popover-title {
+.filament-tutorials-popover .driver-popover-title {
   color: rgb(17 24 39);
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.4;
 }
 
-.driver-popover-description {
+.filament-tutorials-popover .driver-popover-description {
   color: rgb(75 85 99);
   font-size: 0.875rem;
   line-height: 1.5;
   margin-top: 0.5rem;
 }
 
-.driver-popover-footer {
+.filament-tutorials-popover .driver-popover-footer {
   align-items: center;
   gap: 0.5rem;
   margin-top: 1rem;
 }
 
-.driver-popover-progress-text {
+.filament-tutorials-popover .driver-popover-progress-text {
   color: rgb(107 114 128);
   font-size: 0.8125rem;
 }
 
-.driver-popover-close-btn {
+.filament-tutorials-popover .driver-popover-close-btn {
   align-items: center;
   border-radius: 0.5rem;
   color: rgb(107 114 128);
@@ -47,13 +47,13 @@
   width: 2rem;
 }
 
-.driver-popover-close-btn:hover {
+.filament-tutorials-popover .driver-popover-close-btn:hover {
   background: rgb(243 244 246);
   color: rgb(55 65 81);
 }
 
-.driver-popover-next-btn,
-.driver-popover-prev-btn {
+.filament-tutorials-popover .driver-popover-next-btn,
+.filament-tutorials-popover .driver-popover-prev-btn {
   border-radius: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -62,77 +62,77 @@
   text-shadow: none;
 }
 
-.driver-popover-next-btn {
+.filament-tutorials-popover .driver-popover-next-btn {
   background: rgb(245 158 11);
   border-color: rgb(245 158 11);
   color: rgb(17 24 39);
 }
 
-.driver-popover-next-btn:hover {
+.filament-tutorials-popover .driver-popover-next-btn:hover {
   background: rgb(217 119 6);
   border-color: rgb(217 119 6);
 }
 
-.driver-popover-prev-btn {
+.filament-tutorials-popover .driver-popover-prev-btn {
   background: rgb(255 255 255);
   border-color: rgb(209 213 219);
   color: rgb(55 65 81);
 }
 
-.driver-popover-prev-btn:hover {
+.filament-tutorials-popover .driver-popover-prev-btn:hover {
   background: rgb(249 250 251);
 }
 
-.filament-tutorials-skip-btn {
+.filament-tutorials-popover .filament-tutorials-skip-btn {
   background: transparent;
   border-color: transparent;
   color: rgb(75 85 99);
 }
 
-.filament-tutorials-skip-btn:hover {
+.filament-tutorials-popover .filament-tutorials-skip-btn:hover {
   background: rgb(243 244 246);
   border-color: transparent;
   color: rgb(17 24 39);
 }
 
-.driver-popover button:focus-visible {
+.filament-tutorials-popover button:focus-visible {
   outline: 2px solid rgb(245 158 11);
   outline-offset: 2px;
 }
 
-.dark .driver-popover {
+.dark .driver-popover.filament-tutorials-popover {
   background: rgb(24 24 27);
   border-color: rgb(63 63 70);
   color: rgb(244 244 245);
 }
 
-.dark .driver-popover-title {
+.dark .filament-tutorials-popover .driver-popover-title {
   color: rgb(244 244 245);
 }
 
-.dark .driver-popover-description,
-.dark .driver-popover-progress-text {
+.dark .filament-tutorials-popover .driver-popover-description,
+.dark .filament-tutorials-popover .driver-popover-progress-text {
   color: rgb(161 161 170);
 }
 
-.dark .driver-popover-close-btn:hover,
-.dark .driver-popover-prev-btn {
+.dark .filament-tutorials-popover .driver-popover-close-btn:hover,
+.dark .filament-tutorials-popover .driver-popover-prev-btn {
   background: rgb(39 39 42);
   border-color: rgb(63 63 70);
   color: rgb(228 228 231);
 }
 
-.dark .driver-popover-prev-btn:hover {
+.dark .filament-tutorials-popover .driver-popover-prev-btn:hover {
   background: rgb(63 63 70);
 }
 
-.dark .filament-tutorials-skip-btn {
+.dark .filament-tutorials-popover .filament-tutorials-skip-btn {
   background: transparent;
   border-color: transparent;
   color: rgb(161 161 170);
 }
 
-.dark .filament-tutorials-skip-btn:hover {
+.dark .filament-tutorials-popover .filament-tutorials-skip-btn:hover {
   background: rgb(39 39 42);
   color: rgb(244 244 245);
 }

@@ -10,6 +10,7 @@ it('serializes stable target and lifecycle hooks', function (): void {
         ->targetAction('create', WorkbenchDashboard::class)
         ->title('Create')
         ->description('Start a new record.')
+        ->optional()
         ->beforeOpenSidebar()
         ->afterOpenSidebar()
         ->beforeOpenProfileMenu()
@@ -33,6 +34,7 @@ it('serializes stable target and lifecycle hooks', function (): void {
             'after' => [
                 ['action' => 'sidebar.opened', 'parameters' => []],
             ],
+            'optional' => true,
         ]);
 });
 

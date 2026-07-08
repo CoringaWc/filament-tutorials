@@ -136,6 +136,10 @@ const runAction = async (action) => {
     window.Alpine?.store('sidebar')?.open?.()
     document.dispatchEvent(new CustomEvent('filament-tutorials:open-sidebar'))
   }
+
+  if (action.action === 'sidebar.opened') {
+    return
+  }
 }
 
 const runBeforeActions = async (step) => {
@@ -152,10 +156,20 @@ const runAfterActions = async (step) => {
 
 const waitForStepTarget = async (step) => {
   if (!step?.selector) {
-    return
+    return false
   }
 
-  await waitForElement(step.selector)
+  try {
+    await waitForElement(step.selector)
+
+    return true
+  } catch (error) {
+    if (step.optional) {
+      return false
+    }
+
+    throw error
+  }
 }
 
 const dismissalReminderStep = (runtime) => {
@@ -183,9 +197,6 @@ const driverStep = (step) => ({
   popover: {
     title: step.title,
     description: step.description,
-  },
-  onDeselected: () => {
-    runAfterActions(step).catch((error) => console.error(error))
   },
 })
 
@@ -296,8 +307,27 @@ const startTutorial = async (runtime, tutorial) => {
     return
   }
 
-  await runBeforeActions(activeSteps[0])
-  await waitForStepTarget(activeSteps[0])
+  let firstStepIndex = 0
+
+  while (activeSteps[firstStepIndex]) {
+    await runBeforeActions(activeSteps[firstStepIndex])
+
+    if (await waitForStepTarget(activeSteps[firstStepIndex])) {
+      break
+    }
+
+    firstStepIndex += 1
+  }
+
+  if (!activeSteps[firstStepIndex]) {
+    return
+  }
+
+  if (firstStepIndex > 0) {
+    activeSteps = activeSteps.slice(firstStepIndex)
+    steps = driverSteps(activeSteps)
+  }
+
   persistTutorialProgress(runtime, tutorial, 'started', activeSteps[0], 0, originalStepCount)
 
   const ensureDismissalReminderIndex = async (currentDriver) => {
@@ -312,7 +342,10 @@ const startTutorial = async (runtime, tutorial) => {
     }
 
     await runBeforeActions(reminderStep)
-    await waitForStepTarget(reminderStep)
+
+    if (!await waitForStepTarget(reminderStep)) {
+      return -1
+    }
 
     dismissalReminderActive = true
     activeSteps = [...activeSteps, reminderStep]
@@ -332,6 +365,29 @@ const startTutorial = async (runtime, tutorial) => {
     })
 
     return activeSteps.length - 1
+  }
+
+  const moveToAvailableStep = async (currentDriver, startIndex, direction = 1) => {
+    for (
+      let nextIndex = startIndex;
+      nextIndex >= 0 && nextIndex < activeSteps.length;
+      nextIndex += direction
+    ) {
+      const nextStep = activeSteps[nextIndex]
+
+      await runBeforeActions(nextStep)
+
+      if (!await waitForStepTarget(nextStep)) {
+        continue
+      }
+
+      currentDriver.moveTo(nextIndex)
+      window.requestAnimationFrame(() => normalizeDriverTargetAria())
+
+      return true
+    }
+
+    return false
   }
 
   const showDismissalReminder = async (currentDriver) => {
@@ -375,6 +431,7 @@ const startTutorial = async (runtime, tutorial) => {
     progressText: labels.progress,
     showButtons: ['close', 'previous', 'next'],
     showProgress: true,
+    popoverClass: 'filament-tutorials-popover',
     steps,
     onPopoverRender: (popover, { driver: currentDriver }) => {
       if (dismissalReminder?.skipLabel) {
@@ -394,24 +451,19 @@ const startTutorial = async (runtime, tutorial) => {
     onNextClick: (_element, _step, { driver: currentDriver }) => {
       const activeIndex = currentDriver.getActiveIndex() ?? 0
       const activeStep = activeSteps[activeIndex]
-      const nextStep = activeSteps[activeIndex + 1]
-
-      if (!nextStep) {
-        currentDriver.destroy()
-
-        return
-      }
 
       runAfterActions(activeStep)
-        .then(() => runBeforeActions(nextStep))
-        .then(() => waitForStepTarget(nextStep))
-        .then(() => currentDriver.moveNext())
-        .then(() => window.requestAnimationFrame(() => normalizeDriverTargetAria()))
+        .then(() => moveToAvailableStep(currentDriver, activeIndex + 1))
+        .then((moved) => {
+          if (!moved) {
+            currentDriver.destroy()
+          }
+        })
         .catch((error) => console.error(error))
     },
     onPrevClick: (_element, _step, { driver: currentDriver }) => {
-      currentDriver.movePrevious()
-      window.requestAnimationFrame(() => normalizeDriverTargetAria())
+      moveToAvailableStep(currentDriver, (currentDriver.getActiveIndex() ?? 0) - 1, -1)
+        .catch((error) => console.error(error))
     },
     onCloseClick: (_element, _step, { driver: currentDriver }) => {
       showDismissalReminder(currentDriver)

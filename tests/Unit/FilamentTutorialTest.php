@@ -40,6 +40,7 @@ it('serializes the public tutorial payload', function (): void {
                 'description' => 'Start here.',
                 'before' => [],
                 'after' => [],
+                'optional' => false,
             ],
         ],
     ]);

@@ -115,6 +115,25 @@ it('rejects invalid tutorial and step keys before writing progress', function ()
     expect(FilamentTutorialProgress::query()->count())->toBe(0);
 });
 
+it('rejects oversized progress identifiers before writing progress', function (): void {
+    $authUser = User::query()->create([
+        'name' => 'Usuário com chave inválida',
+        'email' => 'long-key@example.test',
+        'password' => 'password',
+    ]);
+
+    expect(fn () => app(RecordTutorialProgressAction::class)->handle(
+        authUser: $authUser,
+        panelId: str_repeat('a', 256),
+        tutorialKey: 'workbench-dashboard',
+        event: 'started',
+        stepKey: 'dashboard-intro',
+        stepIndex: 0,
+    ))->toThrow(ValidationException::class);
+
+    expect(FilamentTutorialProgress::query()->count())->toBe(0);
+});
+
 it('isolates tutorial progress by user identity', function (): void {
     $firstUser = User::query()->create([
         'name' => 'Primeiro usuário',

@@ -20,6 +20,8 @@ class TutorialStep
     /** @var list<array{action: string, parameters: array<string, mixed>}> */
     protected array $after = [];
 
+    protected bool $isOptional = false;
+
     public static function make(?string $key = null): static
     {
         $step = app(static::class);
@@ -89,6 +91,13 @@ class TutorialStep
     public function description(string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function optional(bool $condition = true): static
+    {
+        $this->isOptional = $condition;
 
         return $this;
     }
@@ -174,7 +183,7 @@ class TutorialStep
     }
 
     /**
-     * @return array{key: string|null, target: array<string, mixed>|null, title: string|null, description: string|null, before: list<array{action: string, parameters: array<string, mixed>}>, after: list<array{action: string, parameters: array<string, mixed>}>}
+     * @return array{key: string|null, target: array<string, mixed>|null, title: string|null, description: string|null, before: list<array{action: string, parameters: array<string, mixed>}>, after: list<array{action: string, parameters: array<string, mixed>}>, optional: bool}
      */
     public function toArray(): array
     {
@@ -185,6 +194,7 @@ class TutorialStep
             'description' => $this->description,
             'before' => $this->before,
             'after' => $this->after,
+            'optional' => $this->isOptional,
         ];
     }
 }

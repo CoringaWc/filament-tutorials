@@ -48,6 +48,23 @@ it('does not register discovered tutorials when discovery is disabled', function
         ->toBeEmpty();
 });
 
+it('does not register discovered tutorials when discovery is disabled by config', function (): void {
+    config()->set('filament-tutorials.discovery.enabled', false);
+
+    $panel = Panel::make()->id('config-disabled-discovery');
+
+    FilamentTutorialsPlugin::make()
+        ->discoverTutorials(
+            in: dirname(__DIR__).'/Fixtures/Tutorials',
+            for: 'CoringaWc\\FilamentTutorials\\Tests\\Fixtures\\Tutorials',
+        )
+        ->register($panel);
+
+    expect(app(TutorialManager::class)->forPanel($panel))
+        ->not->toHaveKey('fixture')
+        ->toBeEmpty();
+});
+
 it('uses the panel convention as the default discovery location', function (): void {
     $tutorials = app(TutorialDiscovery::class)->discover(
         dirname(__DIR__, 2).'/workbench/app/Filament/Admin/Tutorials',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use CoringaWc\FilamentTutorials\Support\TutorialPayloadFactory;
 use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
+use CoringaWc\FilamentTutorials\TutorialStep;
 use Filament\Facades\Filament;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
 use Workbench\App\Filament\Resources\TutorialRecords\Pages\ListTutorialRecords;
@@ -62,6 +63,13 @@ it('builds localized payload for the current page scope only', function (): void
             'action' => 'sidebar.open',
             'parameters' => [],
         ]);
+
+    $optionalStep = TutorialStep::make('optional-modal-step')
+        ->target('workbench.optional-modal')
+        ->optional()
+        ->toArray();
+
+    expect($optionalStep['optional'])->toBeTrue();
 });
 
 it('resolves stable selectors for page action and render hook targets', function (): void {

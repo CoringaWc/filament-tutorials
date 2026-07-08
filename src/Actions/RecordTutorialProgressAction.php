@@ -127,11 +127,11 @@ final class RecordTutorialProgressAction
     {
         $messages = [];
 
-        if (trim($panelId) === '') {
-            $messages['panel_id'] = __('The panel is required.');
+        if (! $this->isValidKey($panelId)) {
+            $messages['panel_id'] = __('The panel is invalid.');
         }
 
-        if (! preg_match('/^[a-z0-9][a-z0-9._-]*$/', $tutorialKey)) {
+        if (! $this->isValidKey($tutorialKey)) {
             $messages['tutorial_key'] = __('The tutorial is invalid.');
         }
 
@@ -139,7 +139,7 @@ final class RecordTutorialProgressAction
             $messages['event'] = __('The progress event is invalid.');
         }
 
-        if ($stepKey !== null && ! preg_match('/^[a-z0-9][a-z0-9._-]*$/', $stepKey)) {
+        if ($stepKey !== null && ! $this->isValidKey($stepKey)) {
             $messages['step_key'] = __('The tutorial step is invalid.');
         }
 
@@ -150,5 +150,11 @@ final class RecordTutorialProgressAction
         if ($messages !== []) {
             throw ValidationException::withMessages($messages);
         }
+    }
+
+    private function isValidKey(string $key): bool
+    {
+        return strlen($key) <= 255
+            && preg_match('/^[a-z0-9][a-z0-9._-]*$/', $key) === 1;
     }
 }

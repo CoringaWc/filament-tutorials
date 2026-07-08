@@ -191,7 +191,7 @@ class FilamentTutorialsPlugin implements Plugin
 
         $manager->register($panel->getId(), $this->tutorials);
 
-        if (! $this->shouldDiscoverTutorials) {
+        if (! $this->shouldDiscoverTutorials || ! (bool) config('filament-tutorials.discovery.enabled', true)) {
             return;
         }
 
