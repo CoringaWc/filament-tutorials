@@ -84,6 +84,8 @@ final class RecordTutorialProgressAction
                 ...$updates,
                 'status' => FilamentTutorialProgress::StatusStarted,
                 'started_at' => $now,
+                'completed_at' => null,
+                'dismissed_at' => null,
             ],
             'completed' => [
                 ...$updates,

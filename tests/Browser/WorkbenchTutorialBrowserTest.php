@@ -203,7 +203,26 @@ it('lets the user skip from the first popover to the final launcher reminder', f
         ->wait(1)
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
-        ->assertScript('document.body.classList.contains("driver-active")', false);
+        ->assertScript('document.body.classList.contains("driver-active")', false)
+        ->assertVisible('[data-filament-tutorials-launcher]')
+        ->assertScript('document.querySelector("[data-filament-tutorials-launcher]")?.hidden', false)
+        ->navigate('/admin')
+        ->wait(1)
+        ->assertVisible('[data-filament-tutorials-launcher]')
+        ->assertScript('document.querySelector("[data-filament-tutorials-launcher]")?.hidden', false)
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const runtime = document.querySelector('[data-filament-tutorials-runtime]')
+                    const payload = JSON.parse(runtime?.dataset.payload ?? '{}')
+                    const tutorial = (payload.tutorials ?? []).find((item) => item.key === 'workbench-dashboard')
+
+                    return tutorial?.autoStart === false
+                        && tutorial?.progressStatus === 'dismissed'
+                })()
+            JS,
+            true,
+        );
 });
 
 it('shows the launcher reminder when the first popover is closed', function (): void {

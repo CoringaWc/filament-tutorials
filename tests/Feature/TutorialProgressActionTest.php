@@ -94,6 +94,22 @@ it('records tutorial progress lifecycle events for the authenticated user', func
         ->toBeNull()
         ->and($restarted->restarted_at)
         ->not->toBeNull();
+
+    $startedAgain = $action->handle(
+        authUser: $authUser,
+        panelId: 'admin',
+        tutorialKey: 'workbench-dashboard',
+        event: 'started',
+        stepKey: 'dashboard-intro',
+        stepIndex: 0,
+    );
+
+    expect($startedAgain->status)
+        ->toBe(FilamentTutorialProgress::StatusStarted)
+        ->and($startedAgain->completed_at)
+        ->toBeNull()
+        ->and($startedAgain->dismissed_at)
+        ->toBeNull();
 });
 
 it('rejects invalid tutorial and step keys before writing progress', function (): void {

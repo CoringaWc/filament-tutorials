@@ -240,7 +240,7 @@ class FilamentTutorialsPlugin implements Plugin
     protected function registerRuntimeHook(Panel $panel): void
     {
         FilamentView::registerRenderHook(
-            PanelsRenderHook::BODY_END,
+            PanelsRenderHook::CONTENT_END,
             function (array $scopes = []) use ($panel): string {
                 if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
                     return '';
