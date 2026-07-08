@@ -42,8 +42,20 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertSee('Ignorar')
         ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-prev-btn")).display', 'none')
         ->assertScript('window.getComputedStyle(document.querySelector("[data-filament-tutorials-skip]")).display !== "none"', true)
-        ->assertScript('window.getComputedStyle(document.querySelector("[data-filament-tutorials-skip]")).color', 'rgb(255, 255, 255)')
         ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-next-btn")).color', 'rgb(255, 255, 255)')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const skip = window.getComputedStyle(document.querySelector('[data-filament-tutorials-skip]'))
+                    const previous = window.getComputedStyle(document.querySelector('.driver-popover-prev-btn'))
+
+                    return skip.color === previous.color
+                        && skip.backgroundColor === previous.backgroundColor
+                        && skip.borderColor === previous.borderColor
+                })()
+            JS,
+            true,
+        )
         ->assertScript(
             <<<'JS'
                 (() => {
@@ -150,6 +162,20 @@ it('keeps the tutorial launcher and popover usable on mobile and dark mode', fun
         ->click('[data-filament-tutorials-launcher]')
         ->wait(1)
         ->assertSee('Painel do laboratório')
+        ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-next-btn")).color', 'rgb(255, 255, 255)')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const skip = window.getComputedStyle(document.querySelector('[data-filament-tutorials-skip]'))
+                    const previous = window.getComputedStyle(document.querySelector('.driver-popover-prev-btn'))
+
+                    return skip.color === previous.color
+                        && skip.backgroundColor === previous.backgroundColor
+                        && skip.borderColor === previous.borderColor
+                })()
+            JS,
+            true,
+        )
         ->screenshot(filename: 'tutorial-dashboard-dark')
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs();
