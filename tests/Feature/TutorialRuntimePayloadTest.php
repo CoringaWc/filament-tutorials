@@ -28,6 +28,21 @@ it('builds localized payload for the current page scope only', function (): void
 
     expect($tutorialKeys)->toContain('workbench-dashboard');
     expect(in_array('tutorial-record-list', $tutorialKeys, true))->toBeFalse();
+
+    $dashboardTutorial = collect($payload['tutorials'])
+        ->firstWhere('key', 'workbench-dashboard');
+
+    expect($dashboardTutorial)->toBeArray();
+
+    $dashboardSelectors = array_map(
+        static fn (array $step): mixed => $step['selector'] ?? null,
+        is_array($dashboardTutorial['steps'] ?? null) ? $dashboardTutorial['steps'] : [],
+    );
+
+    expect($dashboardSelectors)
+        ->toContain('[data-tour="workbench.dashboard.intro"]')
+        ->toContain('[data-tour="tutorial.launcher"]')
+        ->toContain(sprintf('[data-tour="%s"]', TutorialTargetKeys::component('workbench.widget.stats')));
 });
 
 it('resolves stable selectors for page action and render hook targets', function (): void {

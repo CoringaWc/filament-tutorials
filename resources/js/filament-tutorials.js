@@ -273,6 +273,7 @@ const startTutorial = async (runtime, tutorial) => {
     steps,
     onNextClick: (_element, _step, { driver: currentDriver }) => {
       const activeIndex = currentDriver.getActiveIndex() ?? 0
+      const activeStep = availableSteps[activeIndex]
       const nextStep = availableSteps[activeIndex + 1]
 
       if (!nextStep) {
@@ -281,7 +282,8 @@ const startTutorial = async (runtime, tutorial) => {
         return
       }
 
-      runBeforeActions(nextStep)
+      runAfterActions(activeStep)
+        .then(() => runBeforeActions(nextStep))
         .then(() => waitForStepTarget(nextStep))
         .then(() => currentDriver.moveNext())
         .then(() => window.requestAnimationFrame(() => normalizeDriverTargetAria()))
@@ -293,15 +295,23 @@ const startTutorial = async (runtime, tutorial) => {
     },
     onCloseClick: (_element, _step, { driver: currentDriver }) => {
       const activeIndex = currentDriver.getActiveIndex() ?? 0
+      const activeStep = availableSteps[activeIndex]
 
-      persistTutorialProgress(runtime, tutorial, 'dismissed', availableSteps[activeIndex], activeIndex)
-      currentDriver.destroy()
+      runAfterActions(activeStep)
+        .finally(() => {
+          persistTutorialProgress(runtime, tutorial, 'dismissed', activeStep, activeIndex)
+          currentDriver.destroy()
+        })
     },
     onDoneClick: (_element, _step, { driver: currentDriver }) => {
       const activeIndex = currentDriver.getActiveIndex() ?? availableSteps.length - 1
+      const activeStep = availableSteps[activeIndex]
 
-      persistTutorialProgress(runtime, tutorial, 'completed', availableSteps[activeIndex], activeIndex)
-      currentDriver.destroy()
+      runAfterActions(activeStep)
+        .finally(() => {
+          persistTutorialProgress(runtime, tutorial, 'completed', activeStep, activeIndex)
+          currentDriver.destroy()
+        })
     },
     onHighlighted: (element) => {
       normalizeDriverTargetAria(element)

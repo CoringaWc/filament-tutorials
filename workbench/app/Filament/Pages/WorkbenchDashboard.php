@@ -29,6 +29,9 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
             ->components([
                 Section::make('Superfícies do painel')
                     ->description('Use estes elementos para validar tutoriais em páginas, schemas, tabelas, dropdowns e áreas dinâmicas.')
+                    ->extraAttributes([
+                        'data-tour' => 'workbench.dashboard.intro',
+                    ])
                     ->schema([
                         Html::make(<<<'HTML'
                             <style>
@@ -300,19 +303,19 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
             ->forPage(static::class)
             ->steps([
                 TutorialStep::make('dashboard-intro')
-                    ->targetPage(static::class)
+                    ->target('workbench.dashboard.intro')
                     ->title('Painel do laboratório')
                     ->description('Esta página mostra como um tutorial pode guiar áreas comuns do painel.'),
                 TutorialStep::make('global-search')
-                    ->targetRenderHook('global-search.before')
-                    ->title('Busca global')
-                    ->description('O botão do tutorial fica próximo à busca global quando há tutorial na página.'),
+                    ->target('tutorial.launcher')
+                    ->title('Botão de ajuda')
+                    ->description('Use este botão para abrir novamente o guia disponível para a página atual.'),
                 TutorialStep::make('header-action')
                     ->targetAction('openLabModal', static::class)
                     ->title('Ação da página')
                     ->description('Ações do cabeçalho também podem ser destacadas.'),
                 TutorialStep::make('widget')
-                    ->targetRenderHook('page.header-widgets.before')
+                    ->targetComponent('workbench.widget.stats')
                     ->title('Widget')
                     ->description('Widgets do dashboard entram no mesmo contrato de targets.'),
                 TutorialStep::make('body')
@@ -331,22 +334,26 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                     ->target('workbench.dropdown.menu')
                     ->title('Menu aberto')
                     ->description('Pre-actions revelam menus antes do destaque.')
-                    ->beforeOpenDropdown('[data-lab-dropdown-trigger]'),
+                    ->beforeOpenDropdown('[data-lab-dropdown-trigger]')
+                    ->afterHide('[data-lab-dropdown-menu]'),
                 TutorialStep::make('profile-menu')
                     ->target('workbench.profile.menu')
                     ->title('Menu de perfil')
                     ->description('Menus de perfil podem ser abertos antes do destaque quando o gatilho é conhecido.')
-                    ->beforeOpenProfileMenu('[data-lab-profile-trigger]'),
+                    ->beforeOpenProfileMenu('[data-lab-profile-trigger]')
+                    ->afterHide('[data-lab-profile-menu]'),
                 TutorialStep::make('collapsible')
                     ->target('workbench.collapsible.panel')
                     ->title('Seção aberta')
                     ->description('Seções colapsáveis podem ser abertas antes do step.')
-                    ->beforeOpenCollapsible('[data-lab-collapsible-trigger]', '[data-lab-collapsible-panel]'),
+                    ->beforeOpenCollapsible('[data-lab-collapsible-trigger]', '[data-lab-collapsible-panel]')
+                    ->afterHide('[data-lab-collapsible-panel]'),
                 TutorialStep::make('modal')
                     ->target('workbench.dashboard.modal')
                     ->title('Modal aberto')
                     ->description('O tutorial pode abrir modais antes de destacar o conteúdo.')
-                    ->beforeOpenModal(['selector' => '[data-lab-modal-trigger]']),
+                    ->beforeOpenModal(['selector' => '[data-lab-modal-trigger]'])
+                    ->afterHide('[data-lab-modal]'),
             ]);
     }
 }

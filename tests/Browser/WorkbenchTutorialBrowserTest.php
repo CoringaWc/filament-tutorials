@@ -37,8 +37,21 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertScript('document.body.classList.contains("driver-active")', true)
         ->assertSee('Painel do laboratório')
         ->assertSee('1 de 11')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const activeTarget = document.querySelector('.driver-active-element')
+                    const rect = activeTarget?.getBoundingClientRect()
+
+                    return activeTarget?.dataset.tour === 'workbench.dashboard.intro'
+                        && rect.width > 250
+                        && rect.height > 100
+                })()
+            JS,
+            true,
+        )
         ->click('.driver-popover-next-btn')
-        ->assertSee('Busca global')
+        ->assertSee('Botão de ajuda')
         ->click('.driver-popover-next-btn')
         ->assertSee('Ação da página')
         ->click('.driver-popover-next-btn')
@@ -71,8 +84,13 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertNoAccessibilityIssues();
 
     $page->click('.driver-popover-next-btn')
+        ->wait(1)
         ->assertNoJavaScriptErrors()
-        ->assertNoConsoleLogs();
+        ->assertNoConsoleLogs()
+        ->assertNotPresent('[data-lab-dropdown-menu]:not([hidden])')
+        ->assertNotPresent('[data-lab-profile-menu]:not([hidden])')
+        ->assertNotPresent('[data-lab-collapsible-panel]:not([hidden])')
+        ->assertNotPresent('[data-lab-modal]:not([hidden])');
 });
 
 it('keeps the tutorial launcher and popover usable on mobile and dark mode', function (): void {
