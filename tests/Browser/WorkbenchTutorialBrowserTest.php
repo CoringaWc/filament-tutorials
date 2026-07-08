@@ -42,6 +42,8 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertSee('Ignorar')
         ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-prev-btn")).display', 'none')
         ->assertScript('window.getComputedStyle(document.querySelector("[data-filament-tutorials-skip]")).display !== "none"', true)
+        ->assertScript('window.getComputedStyle(document.querySelector("[data-filament-tutorials-skip]")).color', 'rgb(255, 255, 255)')
+        ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-next-btn")).color', 'rgb(255, 255, 255)')
         ->assertScript(
             <<<'JS'
                 (() => {
