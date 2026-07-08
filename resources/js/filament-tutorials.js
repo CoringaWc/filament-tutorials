@@ -5,6 +5,7 @@ const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
 let activeDriver = null
 let alpineComponentRegistered = false
+let startingTutorial = false
 
 const destroyActiveDriver = () => {
   if (!activeDriver) {
@@ -562,6 +563,10 @@ const currentPayload = () => {
 const currentTutorialIsAvailable = () => Boolean(currentTutorial(currentPayload()))
 
 const startCurrentTutorial = async () => {
+  if (startingTutorial) {
+    return
+  }
+
   const runtime = currentRuntime()
   const tutorial = currentTutorial(currentPayload())
 
@@ -569,7 +574,13 @@ const startCurrentTutorial = async () => {
     return
   }
 
-  await startTutorial(runtime, tutorial)
+  startingTutorial = true
+
+  try {
+    await startTutorial(runtime, tutorial)
+  } finally {
+    startingTutorial = false
+  }
 }
 
 const listenForEvent = (target, eventName, listener) => {
@@ -578,10 +589,34 @@ const listenForEvent = (target, eventName, listener) => {
   return () => target.removeEventListener(eventName, listener)
 }
 
+const syncLauncherElements = () => {
+  const available = currentTutorialIsAvailable()
+
+  document.querySelectorAll(launcherSelector).forEach((launcher) => {
+    launcher.hidden = !available
+    launcher.dataset.filamentTutorialsBooted = 'true'
+
+    if (launcher.dataset.filamentTutorialsClickBooted === 'true') {
+      return
+    }
+
+    launcher.dataset.filamentTutorialsClickBooted = 'true'
+    launcher.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      startCurrentTutorial().catch((error) => console.error(error))
+    }, { capture: true })
+  })
+
+  return available
+}
+
 const dispatchLauncherAvailability = () => {
+  const available = syncLauncherElements()
+
   document.dispatchEvent(new CustomEvent('filament-tutorials:launcher-availability-changed', {
     detail: {
-      available: currentTutorialIsAvailable(),
+      available,
     },
   }))
 }
