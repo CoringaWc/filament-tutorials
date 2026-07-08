@@ -40,6 +40,8 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertSee('Painel do laboratório')
         ->assertSee('1 de 12')
         ->assertSee('Ignorar')
+        ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-prev-btn")).display', 'none')
+        ->assertScript('window.getComputedStyle(document.querySelector("[data-filament-tutorials-skip]")).display !== "none"', true)
         ->assertScript(
             <<<'JS'
                 (() => {
@@ -56,6 +58,8 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->click('.driver-popover-next-btn')
         ->assertSee('Menu lateral')
         ->assertSee('2 de 12')
+        ->assertNotPresent('[data-filament-tutorials-skip]')
+        ->assertScript('window.getComputedStyle(document.querySelector(".driver-popover-prev-btn")).display !== "none"', true)
         ->assertScript(
             sprintf(
                 <<<'JS'

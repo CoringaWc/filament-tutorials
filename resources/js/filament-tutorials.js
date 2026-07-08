@@ -202,6 +202,26 @@ const driverStep = (step) => ({
 
 const driverSteps = (steps) => steps.map((step) => driverStep(step))
 
+const stepsWithFirstDismissalLayout = (steps, reminderStep) => {
+  if (!reminderStep || steps.length === 0) {
+    return steps
+  }
+
+  return steps.map((step, index) => {
+    if (index !== 0) {
+      return step
+    }
+
+    return {
+      ...step,
+      popover: {
+        ...step.popover,
+        showButtons: ['close', 'next'],
+      },
+    }
+  })
+}
+
 const addDismissalReminderButton = (popover, label, onClick) => {
   if (popover.footerButtons.querySelector('[data-filament-tutorials-skip]')) {
     return
@@ -215,6 +235,10 @@ const addDismissalReminderButton = (popover, label, onClick) => {
   button.addEventListener('click', onClick)
 
   popover.footerButtons.prepend(button)
+}
+
+const removeDismissalReminderButton = (popover) => {
+  popover.footerButtons.querySelector('[data-filament-tutorials-skip]')?.remove()
 }
 
 const persistTutorialProgress = (runtime, tutorial, event, step = null, stepIndex = null, stepCount = null) => {
@@ -300,7 +324,7 @@ const startTutorial = async (runtime, tutorial) => {
   const originalStepCount = tutorialSteps(tutorial).length
   const reminderStep = dismissalReminderStep(runtime)
   let activeSteps = tutorialSteps(tutorial)
-  let steps = driverSteps(activeSteps)
+  let steps = stepsWithFirstDismissalLayout(driverSteps(activeSteps), reminderStep)
   let dismissalReminderActive = false
 
   if (steps.length === 0) {
@@ -325,7 +349,7 @@ const startTutorial = async (runtime, tutorial) => {
 
   if (firstStepIndex > 0) {
     activeSteps = activeSteps.slice(firstStepIndex)
-    steps = driverSteps(activeSteps)
+    steps = stepsWithFirstDismissalLayout(driverSteps(activeSteps), reminderStep)
   }
 
   persistTutorialProgress(runtime, tutorial, 'started', activeSteps[0], 0, originalStepCount)
@@ -349,7 +373,7 @@ const startTutorial = async (runtime, tutorial) => {
 
     dismissalReminderActive = true
     activeSteps = [...activeSteps, reminderStep]
-    steps = driverSteps(activeSteps)
+    steps = stepsWithFirstDismissalLayout(driverSteps(activeSteps), reminderStep)
     steps[steps.length - 1] = {
       ...steps[steps.length - 1],
       popover: {
@@ -434,12 +458,21 @@ const startTutorial = async (runtime, tutorial) => {
     popoverClass: 'filament-tutorials-popover',
     steps,
     onPopoverRender: (popover, { driver: currentDriver }) => {
+      const shouldShowDismissalReminder = Boolean(reminderStep && (currentDriver.getActiveIndex() ?? 0) === 0)
+
+      popover.wrapper.classList.toggle(
+        'filament-tutorials-has-dismissal-reminder',
+        shouldShowDismissalReminder,
+      )
+
       if (dismissalReminder?.skipLabel) {
         popover.closeButton.setAttribute('aria-label', dismissalReminder.skipLabel)
         popover.closeButton.setAttribute('title', dismissalReminder.skipLabel)
       }
 
-      if (!reminderStep || (currentDriver.getActiveIndex() ?? 0) !== 0) {
+      if (!shouldShowDismissalReminder) {
+        removeDismissalReminderButton(popover)
+
         return
       }
 
