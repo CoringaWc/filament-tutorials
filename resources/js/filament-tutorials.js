@@ -3,6 +3,8 @@ import '../css/filament-tutorials.css'
 
 const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
+const modalSelector = '[aria-modal="true"], .fi-modal-window'
+const optionalTargetTimeout = 80
 let activeDriver = null
 let alpineComponentRegistered = false
 let startingTutorial = false
@@ -17,20 +19,20 @@ const destroyActiveDriver = () => {
 }
 
 const visibleElement = (selector) => {
-  const element = document.querySelector(selector)
+  for (const element of document.querySelectorAll(selector)) {
+    const rect = element.getBoundingClientRect()
 
-  if (!element) {
-    return null
+    if (rect.width > 0 && rect.height > 0) {
+      return element
+    }
   }
 
-  const rect = element.getBoundingClientRect()
-
-  if (rect.width <= 0 || rect.height <= 0) {
-    return null
-  }
-
-  return element
+  return null
 }
+
+const waitForNextPaint = () => new Promise((resolve) => {
+  window.requestAnimationFrame(() => window.requestAnimationFrame(resolve))
+})
 
 const waitForElement = (selector, timeout = 2500) => {
   const existingElement = visibleElement(selector)
@@ -65,7 +67,7 @@ const waitForElement = (selector, timeout = 2500) => {
   })
 }
 
-const visibleModal = () => visibleElement('[aria-modal="true"], .fi-modal-window')
+const visibleModal = () => visibleElement(modalSelector)
 
 const clickSelector = async (selector) => {
   const element = await waitForElement(selector)
@@ -87,10 +89,14 @@ const runAction = async (action) => {
 
   if (action.action === 'modal.open') {
     if (visibleModal()) {
+      await waitForNextPaint()
+
       return
     }
 
     await clickSelector(parameters.selector ?? `[data-tour="${parameters.trigger}"]`)
+    await waitForElement(modalSelector)
+    await waitForNextPaint()
 
     return
   }
@@ -167,7 +173,7 @@ const waitForStepTarget = async (step) => {
   }
 
   try {
-    await waitForElement(step.selector, step.optional ? 400 : 2500)
+    await waitForElement(step.selector, step.optional ? optionalTargetTimeout : 2500)
 
     return true
   } catch (error) {

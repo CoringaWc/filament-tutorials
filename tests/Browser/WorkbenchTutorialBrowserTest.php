@@ -103,14 +103,19 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
         ->assertVisible('[data-lab-profile-menu]')
         ->click('.driver-popover-next-btn')
         ->assertSee('Seção aberta')
-        ->assertVisible('[data-lab-collapsible-panel]')
-        ->wait(1)
-        ->click('.driver-popover-next-btn')
-        ->wait(1)
+        ->assertVisible('[data-lab-collapsible-panel]');
+
+    $modalStepStartedAt = $page->script('performance.now()');
+
+    $page->click('.driver-popover-next-btn')
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
         ->assertSee('Modal aberto')
-        ->assertVisible('[data-tour="workbench.dashboard.modal"]')
+        ->assertVisible('[data-tour="workbench.dashboard.modal"]');
+
+    expect($page->script("performance.now() - {$modalStepStartedAt}"))->toBeLessThan(1500);
+
+    $page
         ->screenshot(filename: 'tutorial-dashboard-modal')
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
