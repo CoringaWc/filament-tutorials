@@ -65,6 +65,8 @@ const waitForElement = (selector, timeout = 2500) => {
   })
 }
 
+const visibleModal = () => visibleElement('[aria-modal="true"], .fi-modal-window')
+
 const clickSelector = async (selector) => {
   const element = await waitForElement(selector)
   const clickableElement = element.matches('a, button, input, select, textarea, [role="button"]')
@@ -84,6 +86,10 @@ const runAction = async (action) => {
   }
 
   if (action.action === 'modal.open') {
+    if (visibleModal()) {
+      return
+    }
+
     await clickSelector(parameters.selector ?? `[data-tour="${parameters.trigger}"]`)
 
     return
@@ -161,7 +167,7 @@ const waitForStepTarget = async (step) => {
   }
 
   try {
-    await waitForElement(step.selector)
+    await waitForElement(step.selector, step.optional ? 400 : 2500)
 
     return true
   } catch (error) {
@@ -327,6 +333,7 @@ const startTutorial = async (runtime, tutorial) => {
   let activeSteps = tutorialSteps(tutorial)
   let steps = stepsWithFirstDismissalLayout(driverSteps(activeSteps), reminderStep)
   let dismissalReminderActive = false
+  let navigating = false
 
   if (steps.length === 0) {
     return
@@ -483,6 +490,12 @@ const startTutorial = async (runtime, tutorial) => {
       })
     },
     onNextClick: (_element, _step, { driver: currentDriver }) => {
+      if (navigating) {
+        return
+      }
+
+      navigating = true
+
       const activeIndex = currentDriver.getActiveIndex() ?? 0
       const activeStep = activeSteps[activeIndex]
 
@@ -494,10 +507,22 @@ const startTutorial = async (runtime, tutorial) => {
           }
         })
         .catch((error) => console.error(error))
+        .finally(() => {
+          navigating = false
+        })
     },
     onPrevClick: (_element, _step, { driver: currentDriver }) => {
+      if (navigating) {
+        return
+      }
+
+      navigating = true
+
       moveToAvailableStep(currentDriver, (currentDriver.getActiveIndex() ?? 0) - 1, -1)
         .catch((error) => console.error(error))
+        .finally(() => {
+          navigating = false
+        })
     },
     onCloseClick: (_element, _step, { driver: currentDriver }) => {
       showDismissalReminder(currentDriver)

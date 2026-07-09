@@ -353,6 +353,12 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                     ->description('Seções colapsáveis podem ser abertas antes do step.')
                     ->beforeOpenCollapsible('[data-lab-collapsible-trigger]', '[data-lab-collapsible-panel]')
                     ->afterHide('[data-lab-collapsible-panel]'),
+                TutorialStep::make('missing-modal-state')
+                    ->target('workbench.dashboard.missing-modal-state')
+                    ->title('Estado opcional ausente')
+                    ->description('Steps opcionais ausentes devem ser ignorados rapidamente.')
+                    ->beforeOpenModal(['selector' => '[data-lab-modal-trigger]'])
+                    ->optional(),
                 TutorialStep::make('modal')
                     ->target('workbench.dashboard.modal')
                     ->title('Modal aberto')
