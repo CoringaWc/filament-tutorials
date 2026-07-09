@@ -31,6 +31,29 @@ it('registers tutorials for the current panel', function (): void {
         ->toBe('filament-tutorials');
 });
 
+it('keeps the panel tutorial registry after scoped instances are flushed', function (): void {
+    $panel = Filament::getCurrentPanel();
+
+    expect(app(TutorialManager::class)->forPanel($panel))
+        ->toHaveKey('workbench-dashboard');
+
+    app()->forgetScopedInstances();
+
+    expect(app(TutorialManager::class)->forPanel($panel))
+        ->toHaveKey('workbench-dashboard');
+});
+
+it('does not duplicate inline tutorials when the panel boots again', function (): void {
+    $panel = Filament::getCurrentPanel();
+    $plugin = $panel->getPlugin('filament-tutorials');
+
+    expect(fn () => $plugin->boot($panel))
+        ->not->toThrow(Throwable::class)
+        ->and(app(TutorialManager::class)->forPanel($panel))
+        ->toHaveKey('workbench-dashboard')
+        ->toHaveKey('tutorial-record-list');
+});
+
 it('uses the user menu launcher position by default', function (): void {
     expect(config('filament-tutorials.launcher'))
         ->toMatchArray([

@@ -51,6 +51,9 @@ class FilamentTutorialsPlugin implements Plugin
 
     protected ?string $dismissalReminderDescription = null;
 
+    /** @var array<string, true> */
+    protected array $inlineTutorialsRegisteredForPanel = [];
+
     public static function make(): static
     {
         return app(static::class);
@@ -205,10 +208,16 @@ class FilamentTutorialsPlugin implements Plugin
 
     public function boot(Panel $panel): void
     {
-        app(TutorialManager::class)->register(
-            $panel->getId(),
-            app(InlineTutorialCollector::class)->collect($panel),
-        );
+        $panelId = $panel->getId();
+
+        if (! isset($this->inlineTutorialsRegisteredForPanel[$panelId])) {
+            app(TutorialManager::class)->register(
+                $panelId,
+                app(InlineTutorialCollector::class)->collect($panel),
+            );
+
+            $this->inlineTutorialsRegisteredForPanel[$panelId] = true;
+        }
 
         $this->registerRuntimeHook($panel);
         $this->registerLauncherHook($panel);

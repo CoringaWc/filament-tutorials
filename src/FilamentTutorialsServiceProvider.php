@@ -28,7 +28,7 @@ class FilamentTutorialsServiceProvider extends PackageServiceProvider
     {
         $this->app->scoped(InlineTutorialCollector::class);
         $this->app->scoped(TutorialDiscovery::class);
-        $this->app->scoped(TutorialManager::class);
+        $this->app->singleton(TutorialManager::class);
         $this->app->scoped(TutorialPayloadFactory::class);
     }
 }
