@@ -67,6 +67,39 @@ const waitForElement = (selector, timeout = 2500) => {
   })
 }
 
+const waitForFirstVisibleStep = (candidateSteps, timeout = 2500) => {
+  const visibleCandidate = candidateSteps.find((candidate) => visibleElement(candidate.step.selector))
+
+  if (visibleCandidate) {
+    return Promise.resolve(visibleCandidate)
+  }
+
+  return new Promise((resolve) => {
+    const timeoutId = window.setTimeout(() => {
+      observer.disconnect()
+      resolve(null)
+    }, timeout)
+
+    const observer = new MutationObserver(() => {
+      const candidate = candidateSteps.find((item) => visibleElement(item.step.selector))
+
+      if (!candidate) {
+        return
+      }
+
+      window.clearTimeout(timeoutId)
+      observer.disconnect()
+      resolve(candidate)
+    })
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+    })
+  })
+}
+
 const visibleModal = () => visibleElement(modalSelector)
 
 const clickSelector = async (selector) => {
@@ -159,6 +192,8 @@ const actionKey = (action) => JSON.stringify({
   action: action.action,
   parameters: action.parameters ?? {},
 })
+
+const beforeActionKey = (step) => JSON.stringify((step.before ?? []).map((action) => actionKey(action)))
 
 const runBeforeActions = async (step, preparedActionKeys = null) => {
   for (const action of step.before ?? []) {
@@ -428,6 +463,47 @@ const startTutorial = async (runtime, tutorial) => {
       const nextStep = activeSteps[nextIndex]
 
       await runBeforeActions(nextStep, preparedActionKeys)
+
+      if (direction > 0 && nextStep.optional && (nextStep.before?.length ?? 0) > 0) {
+        const sharedBeforeKey = beforeActionKey(nextStep)
+        const candidateSteps = []
+        let lastCandidateIndex = nextIndex
+
+        for (
+          let candidateIndex = nextIndex;
+          candidateIndex < activeSteps.length;
+          candidateIndex += 1
+        ) {
+          const candidateStep = activeSteps[candidateIndex]
+
+          if (beforeActionKey(candidateStep) !== sharedBeforeKey) {
+            break
+          }
+
+          candidateSteps.push({
+            index: candidateIndex,
+            step: candidateStep,
+          })
+          lastCandidateIndex = candidateIndex
+
+          if (!candidateStep.optional) {
+            break
+          }
+        }
+
+        const visibleCandidate = await waitForFirstVisibleStep(candidateSteps)
+
+        if (visibleCandidate) {
+          currentDriver.moveTo(visibleCandidate.index)
+          window.requestAnimationFrame(() => normalizeDriverTargetAria())
+
+          return true
+        }
+
+        nextIndex = lastCandidateIndex
+
+        continue
+      }
 
       if (!await waitForStepTarget(nextStep)) {
         continue
