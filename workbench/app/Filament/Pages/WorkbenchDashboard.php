@@ -359,6 +359,12 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                     ->description('Steps opcionais ausentes devem ser ignorados rapidamente.')
                     ->beforeOpenModal(['selector' => '[data-lab-modal-trigger]'])
                     ->optional(),
+                TutorialStep::make('missing-modal-confirmation')
+                    ->target('workbench.dashboard.missing-modal-confirmation')
+                    ->title('Outro estado opcional ausente')
+                    ->description('O mesmo preparo de modal não deve ser executado repetidamente.')
+                    ->beforeOpenModal(['selector' => '[data-lab-modal-trigger]'])
+                    ->optional(),
                 TutorialStep::make('modal')
                     ->target('workbench.dashboard.modal')
                     ->title('Modal aberto')

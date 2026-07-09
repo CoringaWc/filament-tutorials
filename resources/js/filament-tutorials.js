@@ -155,9 +155,21 @@ const runAction = async (action) => {
   }
 }
 
-const runBeforeActions = async (step) => {
+const actionKey = (action) => JSON.stringify({
+  action: action.action,
+  parameters: action.parameters ?? {},
+})
+
+const runBeforeActions = async (step, preparedActionKeys = null) => {
   for (const action of step.before ?? []) {
+    const key = actionKey(action)
+
+    if (preparedActionKeys?.has(key)) {
+      continue
+    }
+
     await runAction(action)
+    preparedActionKeys?.add(key)
   }
 }
 
@@ -406,6 +418,8 @@ const startTutorial = async (runtime, tutorial) => {
   }
 
   const moveToAvailableStep = async (currentDriver, startIndex, direction = 1) => {
+    const preparedActionKeys = new Set()
+
     for (
       let nextIndex = startIndex;
       nextIndex >= 0 && nextIndex < activeSteps.length;
@@ -413,7 +427,7 @@ const startTutorial = async (runtime, tutorial) => {
     ) {
       const nextStep = activeSteps[nextIndex]
 
-      await runBeforeActions(nextStep)
+      await runBeforeActions(nextStep, preparedActionKeys)
 
       if (!await waitForStepTarget(nextStep)) {
         continue
