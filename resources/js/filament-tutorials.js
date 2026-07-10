@@ -3,7 +3,7 @@ import '../css/filament-tutorials.css'
 
 const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
-const modalSelector = '[aria-modal="true"]'
+const modalSelector = '[aria-modal="true"]:not(.filament-tutorials-popover)'
 const optionalTargetTimeout = 80
 let activeDriver = null
 let alpineComponentRegistered = false
