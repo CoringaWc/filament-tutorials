@@ -10,6 +10,7 @@ it('keeps the runtime on public APIs and away from fragile selectors', function 
         ->toContain("from 'driver.js'")
         ->toContain('MutationObserver')
         ->toContain(':not(.filament-tutorials-popover)')
+        ->toContain('window.setTimeout(finish, 100)')
         ->toContain('const escapeHtml')
         ->toContain('title: escapeHtml(step.title)')
         ->toContain('description: escapeHtml(step.description)')

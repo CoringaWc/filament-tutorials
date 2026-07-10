@@ -31,7 +31,19 @@ const visibleElement = (selector) => {
 }
 
 const waitForNextPaint = () => new Promise((resolve) => {
-  window.requestAnimationFrame(() => window.requestAnimationFrame(resolve))
+  let completed = false
+  const finish = () => {
+    if (completed) {
+      return
+    }
+
+    completed = true
+    window.clearTimeout(timeoutId)
+    resolve()
+  }
+  const timeoutId = window.setTimeout(finish, 100)
+
+  window.requestAnimationFrame(() => window.requestAnimationFrame(finish))
 })
 
 const waitForElement = (selector, timeout = 2500) => {
