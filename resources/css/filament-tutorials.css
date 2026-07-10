@@ -53,7 +53,8 @@
 }
 
 .filament-tutorials-popover .driver-popover-next-btn,
-.filament-tutorials-popover .driver-popover-prev-btn {
+.filament-tutorials-popover .driver-popover-prev-btn,
+.filament-tutorials-popover .filament-tutorials-skip-btn {
   border-radius: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -73,23 +74,13 @@
   border-color: rgb(146 64 14);
 }
 
-.filament-tutorials-popover .driver-popover-prev-btn {
+.filament-tutorials-popover :is(.driver-popover-prev-btn, .filament-tutorials-skip-btn) {
   background: rgb(255 255 255);
   border-color: rgb(209 213 219);
   color: rgb(55 65 81);
 }
 
-.filament-tutorials-popover .driver-popover-prev-btn:hover {
-  background: rgb(249 250 251);
-}
-
-.filament-tutorials-popover .filament-tutorials-skip-btn {
-  background: rgb(255 255 255);
-  border-color: rgb(209 213 219);
-  color: rgb(55 65 81);
-}
-
-.filament-tutorials-popover .filament-tutorials-skip-btn:hover {
+.filament-tutorials-popover :is(.driver-popover-prev-btn, .filament-tutorials-skip-btn):hover {
   background: rgb(249 250 251);
 }
 
@@ -118,22 +109,12 @@
 }
 
 .dark .filament-tutorials-popover .driver-popover-close-btn:hover,
-.dark .filament-tutorials-popover .driver-popover-prev-btn {
+.dark .filament-tutorials-popover :is(.driver-popover-prev-btn, .filament-tutorials-skip-btn) {
   background: rgb(39 39 42);
   border-color: rgb(63 63 70);
   color: rgb(228 228 231);
 }
 
-.dark .filament-tutorials-popover .driver-popover-prev-btn:hover {
-  background: rgb(63 63 70);
-}
-
-.dark .filament-tutorials-popover .filament-tutorials-skip-btn {
-  background: rgb(39 39 42);
-  border-color: rgb(63 63 70);
-  color: rgb(228 228 231);
-}
-
-.dark .filament-tutorials-popover .filament-tutorials-skip-btn:hover {
+.dark .filament-tutorials-popover :is(.driver-popover-prev-btn, .filament-tutorials-skip-btn):hover {
   background: rgb(63 63 70);
 }

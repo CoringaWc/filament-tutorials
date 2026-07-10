@@ -4,34 +4,41 @@ declare(strict_types=1);
 
 namespace CoringaWc\FilamentTutorials\Support;
 
+use Illuminate\Support\Str;
+
 final class TutorialProgressMetadata
 {
-    /** @var list<string> */
-    private const AllowedKeys = [
-        'source',
-        'step_count',
-        'trigger',
-    ];
+    private const MaximumSourceLength = 64;
+
+    private const MaximumStepCount = 1000;
+
+    private const MaximumTriggerLength = 255;
 
     /**
      * @param  array<string, mixed>  $metadata
-     * @return array<string, bool|float|int|string|null>
+     * @return array<string, int|string>
      */
     public static function sanitize(array $metadata): array
     {
         $allowedMetadata = [];
 
-        foreach (self::AllowedKeys as $key) {
-            $value = $metadata[$key] ?? null;
-
-            if ($value === null || is_scalar($value)) {
-                $allowedMetadata[$key] = $value;
-            }
+        if (is_string($metadata['source'] ?? null)) {
+            $allowedMetadata['source'] = self::truncate($metadata['source'], self::MaximumSourceLength);
         }
 
-        return array_filter(
-            $allowedMetadata,
-            static fn (bool|float|int|string|null $value): bool => $value !== null,
-        );
+        if (is_int($metadata['step_count'] ?? null) || (is_string($metadata['step_count'] ?? null) && ctype_digit($metadata['step_count']))) {
+            $allowedMetadata['step_count'] = min((int) $metadata['step_count'], self::MaximumStepCount);
+        }
+
+        if (is_string($metadata['trigger'] ?? null)) {
+            $allowedMetadata['trigger'] = self::truncate($metadata['trigger'], self::MaximumTriggerLength);
+        }
+
+        return $allowedMetadata;
+    }
+
+    private static function truncate(string $value, int $maximumLength): string
+    {
+        return Str::limit($value, $maximumLength, '');
     }
 }

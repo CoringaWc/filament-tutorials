@@ -3,7 +3,7 @@ import '../css/filament-tutorials.css'
 
 const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
-const modalSelector = '[aria-modal="true"], .fi-modal-window'
+const modalSelector = '[aria-modal="true"]'
 const optionalTargetTimeout = 80
 let activeDriver = null
 let alpineComponentRegistered = false
@@ -193,18 +193,23 @@ const actionKey = (action) => JSON.stringify({
   parameters: action.parameters ?? {},
 })
 
+const actionCanBePreparedOnce = (action) => action.action === 'modal.open'
+
 const beforeActionKey = (step) => JSON.stringify((step.before ?? []).map((action) => actionKey(action)))
 
 const runBeforeActions = async (step, preparedActionKeys = null) => {
   for (const action of step.before ?? []) {
     const key = actionKey(action)
 
-    if (preparedActionKeys?.has(key)) {
+    if (actionCanBePreparedOnce(action) && preparedActionKeys?.has(key)) {
       continue
     }
 
     await runAction(action)
-    preparedActionKeys?.add(key)
+
+    if (actionCanBePreparedOnce(action)) {
+      preparedActionKeys?.add(key)
+    }
   }
 }
 
@@ -252,11 +257,19 @@ const dismissalReminderStep = (runtime) => {
 
 const tutorialSteps = (tutorial) => (tutorial.steps ?? []).filter((step) => step.selector)
 
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;',
+}[character]))
+
 const driverStep = (step) => ({
   element: step.selector,
   popover: {
-    title: step.title,
-    description: step.description,
+    title: escapeHtml(step.title),
+    description: escapeHtml(step.description),
   },
 })
 
@@ -380,6 +393,12 @@ const startTutorial = async (runtime, tutorial) => {
   const launcher = document.querySelector(launcherSelector)
   const payload = runtimePayload(runtime)
   const labels = payload.labels
+  const escapedLabels = {
+    done: escapeHtml(labels.done),
+    next: escapeHtml(labels.next),
+    previous: escapeHtml(labels.previous),
+    progress: escapeHtml(labels.progress),
+  }
   const dismissalReminder = payload.dismissalReminder
   const originalStepCount = tutorialSteps(tutorial).length
   const reminderStep = dismissalReminderStep(runtime)
@@ -439,7 +458,7 @@ const startTutorial = async (runtime, tutorial) => {
       ...steps[steps.length - 1],
       popover: {
         ...steps[steps.length - 1].popover,
-        nextBtnText: labels.done,
+        nextBtnText: escapedLabels.done,
         showButtons: ['next'],
       },
     }
@@ -500,6 +519,16 @@ const startTutorial = async (runtime, tutorial) => {
           return true
         }
 
+        const requiredCandidate = candidateSteps.find((candidate) => !candidate.step.optional)
+
+        if (requiredCandidate) {
+          await waitForStepTarget(requiredCandidate.step)
+          currentDriver.moveTo(requiredCandidate.index)
+          window.requestAnimationFrame(() => normalizeDriverTargetAria())
+
+          return true
+        }
+
         nextIndex = lastCandidateIndex
 
         continue
@@ -553,10 +582,10 @@ const startTutorial = async (runtime, tutorial) => {
   activeDriver = driver({
     allowClose: true,
     animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    doneBtnText: labels.done,
-    nextBtnText: labels.next,
-    prevBtnText: labels.previous,
-    progressText: labels.progress,
+    doneBtnText: escapedLabels.done,
+    nextBtnText: escapedLabels.next,
+    prevBtnText: escapedLabels.previous,
+    progressText: escapedLabels.progress,
     showButtons: ['close', 'previous', 'next'],
     showProgress: true,
     popoverClass: 'filament-tutorials-popover',

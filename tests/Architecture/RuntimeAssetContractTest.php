@@ -8,7 +8,11 @@ it('keeps the runtime on public APIs and away from fragile selectors', function 
 
     expect($runtime)
         ->toContain("from 'driver.js'")
-        ->toContain('MutationObserver');
+        ->toContain('MutationObserver')
+        ->toContain('const escapeHtml')
+        ->toContain('title: escapeHtml(step.title)')
+        ->toContain('description: escapeHtml(step.description)')
+        ->toContain('doneBtnText: escapedLabels.done');
 
     foreach ([
         'setInterval',
@@ -24,7 +28,9 @@ it('keeps the runtime on public APIs and away from fragile selectors', function 
     }
 
     expect($styles)
-        ->toContain('@import "driver.js/dist/driver.css"');
+        ->toContain('@import "driver.js/dist/driver.css"')
+        ->toContain('.filament-tutorials-popover .filament-tutorials-skip-btn')
+        ->toContain(':is(.driver-popover-prev-btn, .filament-tutorials-skip-btn)');
 
     expect(str_contains((string) $styles, '.fi-'))->toBeFalse();
 });

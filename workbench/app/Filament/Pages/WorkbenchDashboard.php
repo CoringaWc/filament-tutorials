@@ -241,7 +241,7 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                             </div>
 
                             <div data-lab-modal hidden class="tutorial-lab-modal-backdrop">
-                                <div data-tour="workbench.dashboard.modal" role="dialog" aria-modal="true" aria-labelledby="workbench-dashboard-modal-heading" class="fi-modal-window tutorial-lab-modal-window">
+                                <div data-tour="workbench.dashboard.modal" role="dialog" aria-modal="true" aria-labelledby="workbench-dashboard-modal-heading" class="tutorial-lab-modal-window">
                                     <h2 id="workbench-dashboard-modal-heading" class="tutorial-lab-modal-title">Modal do laboratório</h2>
                                     <p class="tutorial-lab-modal-description">Conteúdo renderizado dentro do modal.</p>
                                 </div>

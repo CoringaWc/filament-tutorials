@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -45,3 +49,76 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/pest --compact
+
+      - name: Execute static analysis
+        run: vendor/bin/phpstan analyse --memory-limit=1G
+
+      - name: Check code style
+        run: vendor/bin/pint --test
+
+  browser:
+    runs-on: ubuntu-latest
+    name: Browser - Chromium
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Execute browser tests
+        run: vendor/bin/pest tests/Browser --compact
+
+      - name: Upload browser screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-screenshots
+          path: tests/Browser/Screenshots/
+          if-no-files-found: ignore
+
+  assets:
+    runs-on: ubuntu-latest
+    name: Frontend assets
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: npm run check
+
+      - name: Build distributable assets
+        run: npm run build
+
+      - name: Ensure distributable assets are current
+        run: git diff --exit-code -- resources/dist

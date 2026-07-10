@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace CoringaWc\FilamentTutorials\Actions;
 
+use CoringaWc\FilamentTutorials\FilamentTutorial;
 use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
+use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use CoringaWc\FilamentTutorials\Support\TutorialProgressMetadata;
+use Filament\PanelRegistry;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +21,11 @@ use Illuminate\Validation\ValidationException;
  */
 final class RecordTutorialProgressAction
 {
+    public function __construct(
+        private readonly TutorialManager $tutorialManager,
+        private readonly PanelRegistry $panelRegistry,
+    ) {}
+
     /**
      * Recebe o evento do runtime JavaScript e persiste apenas quando há usuário autenticado e tabela disponível.
      *
@@ -25,7 +33,8 @@ final class RecordTutorialProgressAction
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $authUser = $request->user();
+        $panelId = (string) $request->input('panel_id');
+        $authUser = $this->authenticatedUser($request, $panelId);
 
         if (! $authUser instanceof Authenticatable || ! $this->progressTableExists()) {
             return response()->json(['recorded' => false]);
@@ -33,7 +42,7 @@ final class RecordTutorialProgressAction
 
         $progress = $this->handle(
             authUser: $authUser,
-            panelId: (string) $request->input('panel_id'),
+            panelId: $panelId,
             tutorialKey: (string) $request->input('tutorial_key'),
             event: (string) $request->input('event'),
             stepKey: is_string($request->input('step_key')) ? $request->input('step_key') : null,
@@ -64,6 +73,7 @@ final class RecordTutorialProgressAction
         array $metadata = [],
     ): FilamentTutorialProgress {
         $this->validateInput($panelId, $tutorialKey, $event, $stepKey, $stepIndex);
+        $this->ensureTutorialIsRegistered($panelId, $tutorialKey);
 
         $now = Carbon::now();
         $identity = [
@@ -118,6 +128,30 @@ final class RecordTutorialProgressAction
     private function progressTableExists(): bool
     {
         return Schema::hasTable(config('filament-tutorials.progress.table', 'filament_tutorial_progress'));
+    }
+
+    private function authenticatedUser(Request $request, string $panelId): ?Authenticatable
+    {
+        $panel = $this->panelRegistry->get($panelId, false);
+        $user = $panel === null
+            ? $request->user()
+            : $panel->auth()->user();
+
+        return $user instanceof Authenticatable ? $user : null;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function ensureTutorialIsRegistered(string $panelId, string $tutorialKey): void
+    {
+        if ($this->tutorialManager->find($panelId, $tutorialKey) instanceof FilamentTutorial) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'tutorial_key' => __('The tutorial is invalid.'),
+        ]);
     }
 
     /**

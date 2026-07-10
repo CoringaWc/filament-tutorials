@@ -8,6 +8,7 @@ use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use CoringaWc\FilamentTutorials\Support\TutorialPayloadFactory;
 use CoringaWc\FilamentTutorials\TutorialStep;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
@@ -131,6 +132,51 @@ it('rejects invalid tutorial and step keys before writing progress', function ()
     expect(FilamentTutorialProgress::query()->count())->toBe(0);
 });
 
+it('rejects progress for tutorials that are not registered in the panel', function (): void {
+    $authUser = User::query()->create([
+        'name' => 'Usuário não registrado',
+        'email' => 'unregistered@example.test',
+        'password' => 'password',
+    ]);
+
+    expect(fn () => app(RecordTutorialProgressAction::class)->handle(
+        authUser: $authUser,
+        panelId: 'admin',
+        tutorialKey: 'unregistered-tutorial',
+        event: 'started',
+    ))->toThrow(ValidationException::class);
+
+    expect(FilamentTutorialProgress::query()->count())->toBe(0);
+});
+
+it('limits the persisted tutorial progress metadata to supported bounded values', function (): void {
+    $authUser = User::query()->create([
+        'name' => 'Usuário de metadados',
+        'email' => 'metadata@example.test',
+        'password' => 'password',
+    ]);
+
+    $progress = app(RecordTutorialProgressAction::class)->handle(
+        authUser: $authUser,
+        panelId: 'admin',
+        tutorialKey: 'workbench-dashboard',
+        event: 'started',
+        metadata: [
+            'source' => str_repeat('s', 65),
+            'step_count' => '1001',
+            'trigger' => str_repeat('t', 256),
+            'unexpected' => ['ignored'],
+        ],
+    );
+
+    expect($progress->metadata)
+        ->toBe([
+            'source' => str_repeat('s', 64),
+            'step_count' => 1000,
+            'trigger' => str_repeat('t', 255),
+        ]);
+});
+
 it('rejects oversized progress identifiers before writing progress', function (): void {
     $authUser = User::query()->create([
         'name' => 'Usuário com chave inválida',
@@ -207,6 +253,53 @@ it('records progress through the package endpoint without accepting browser iden
         ->toBe((string) $authUser->getKey())
         ->and($progress->metadata)
         ->toBe(['source' => 'runtime']);
+});
+
+it('rejects endpoint progress for a tutorial that is not registered in the panel', function (): void {
+    $authUser = User::query()->create([
+        'name' => 'Usuário endpoint inválido',
+        'email' => 'invalid-endpoint@example.test',
+        'password' => 'password',
+    ]);
+
+    actingAs($authUser);
+
+    postJson(route('filament-tutorials.progress'), [
+        'panel_id' => 'admin',
+        'tutorial_key' => 'unregistered-tutorial',
+        'event' => 'started',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('tutorial_key');
+
+    expect(FilamentTutorialProgress::query()->count())->toBe(0);
+});
+
+it('does not fall back to another authenticated guard for panel progress', function (): void {
+    config()->set('auth.guards.tutorial-test', [
+        'driver' => 'session',
+        'provider' => 'users',
+    ]);
+
+    Filament::getPanel('admin')->authGuard('tutorial-test');
+
+    $authUser = User::query()->create([
+        'name' => 'Usuário de outro guard',
+        'email' => 'other-guard@example.test',
+        'password' => 'password',
+    ]);
+
+    actingAs($authUser);
+
+    postJson(route('filament-tutorials.progress'), [
+        'panel_id' => 'admin',
+        'tutorial_key' => 'workbench-dashboard',
+        'event' => 'started',
+    ])
+        ->assertOk()
+        ->assertJson(['recorded' => false]);
+
+    expect(FilamentTutorialProgress::query()->count())->toBe(0);
 });
 
 it('does not auto-start tutorials completed by the authenticated user', function (): void {
