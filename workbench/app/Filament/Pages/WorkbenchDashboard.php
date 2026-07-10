@@ -124,6 +124,9 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                                 }
 
                                 .tutorial-lab-modal-window {
+                                    position: absolute;
+                                    inset: 0 auto auto 0;
+                                    transform: translate(-50%, -50%);
                                     width: min(calc(100vw - 2rem), 32rem);
                                     border-radius: .75rem;
                                     border: 1px solid rgb(3 7 18 / .05);
@@ -131,6 +134,12 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                                     padding: 1.5rem;
                                     box-shadow: 0 20px 25px -5px rgb(0 0 0 / .1), 0 8px 10px -6px rgb(0 0 0 / .1);
                                     color: rgb(17 24 39);
+                                }
+
+                                .tutorial-lab-modal-positioning-context {
+                                    position: relative;
+                                    width: 0;
+                                    height: 0;
                                 }
 
                                 .tutorial-lab-modal-title {
@@ -241,9 +250,11 @@ class WorkbenchDashboard extends Page implements HasFilamentTutorials
                             </div>
 
                             <div data-lab-modal hidden class="tutorial-lab-modal-backdrop">
-                                <div data-tour="workbench.dashboard.modal" role="dialog" aria-modal="true" aria-labelledby="workbench-dashboard-modal-heading" class="tutorial-lab-modal-window">
-                                    <h2 id="workbench-dashboard-modal-heading" class="tutorial-lab-modal-title">Modal do laboratório</h2>
-                                    <p class="tutorial-lab-modal-description">Conteúdo renderizado dentro do modal.</p>
+                                <div role="dialog" aria-modal="true" aria-labelledby="workbench-dashboard-modal-heading" class="tutorial-lab-modal-positioning-context">
+                                    <div data-tour="workbench.dashboard.modal" class="tutorial-lab-modal-window">
+                                        <h2 id="workbench-dashboard-modal-heading" class="tutorial-lab-modal-title">Modal do laboratório</h2>
+                                        <p class="tutorial-lab-modal-description">Conteúdo renderizado dentro do modal.</p>
+                                    </div>
                                 </div>
                             </div>
 

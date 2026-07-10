@@ -108,10 +108,28 @@ it('runs the dashboard tutorial across static and dynamic targets', function ():
     $modalStepStartedAt = $page->script('performance.now()');
 
     $page->click('.driver-popover-next-btn')
+        ->waitForText('Modal aberto')
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
         ->assertSee('Modal aberto')
-        ->assertVisible('[data-tour="workbench.dashboard.modal"]');
+        ->assertVisible('[data-tour="workbench.dashboard.modal"]')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const target = document.querySelector('[data-tour="workbench.dashboard.modal"]')
+                    const modal = target?.closest('[aria-modal="true"]')
+                    const modalRect = modal?.getBoundingClientRect()
+
+                    return Boolean(
+                        modal
+                        && modalRect?.width === 0
+                        && modalRect?.height === 0
+                        && target.getBoundingClientRect().width > 0
+                    )
+                })()
+            JS,
+            true,
+        );
 
     expect($page->script("performance.now() - {$modalStepStartedAt}"))->toBeLessThan(1500);
 

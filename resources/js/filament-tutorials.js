@@ -5,6 +5,7 @@ const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
 const modalSelector = '[aria-modal="true"]:not(.filament-tutorials-popover)'
 const optionalTargetTimeout = 80
+const actionTargetTimeout = 10000
 let activeDriver = null
 let alpineComponentRegistered = false
 let startingTutorial = false
@@ -18,17 +19,58 @@ const destroyActiveDriver = () => {
   activeDriver = null
 }
 
-const visibleElement = (selector) => {
-  for (const element of document.querySelectorAll(selector)) {
-    const rect = element.getBoundingClientRect()
+const elementAndAncestorsAreVisible = (element) => {
+  for (let currentElement = element; currentElement; currentElement = currentElement.parentElement) {
+    if (currentElement.hasAttribute('hidden') || currentElement.getAttribute('aria-hidden') === 'true') {
+      return false
+    }
 
-    if (rect.width > 0 && rect.height > 0) {
-      return element
+    const styles = window.getComputedStyle(currentElement)
+
+    if (
+      styles.display === 'none'
+      || styles.visibility === 'hidden'
+      || styles.visibility === 'collapse'
+      || Number.parseFloat(styles.opacity) === 0
+    ) {
+      return false
     }
   }
 
-  return null
+  return true
 }
+
+const hasVisibleBox = (element) => {
+  if (!elementAndAncestorsAreVisible(element)) {
+    return false
+  }
+
+  const rect = element.getBoundingClientRect()
+
+  return rect.width > 0 && rect.height > 0
+}
+
+const elementOrDescendantHasVisibleBox = (element) => {
+  if (hasVisibleBox(element)) {
+    return true
+  }
+
+  const descendants = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT)
+
+  while (descendants.nextNode()) {
+    if (hasVisibleBox(descendants.currentNode)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+const visibleElement = (selector) => Array.from(document.querySelectorAll(selector))
+  .find(hasVisibleBox) ?? null
+
+const visibleStructuralElement = (selector) => Array.from(document.querySelectorAll(selector))
+  .find((element) => elementAndAncestorsAreVisible(element) && elementOrDescendantHasVisibleBox(element)) ?? null
 
 const waitForNextPaint = () => new Promise((resolve) => {
   let completed = false
@@ -46,8 +88,8 @@ const waitForNextPaint = () => new Promise((resolve) => {
   window.requestAnimationFrame(() => window.requestAnimationFrame(finish))
 })
 
-const waitForElement = (selector, timeout = 2500) => {
-  const existingElement = visibleElement(selector)
+const waitForElement = (selector, timeout = 2500, findVisibleElement = visibleElement) => {
+  const existingElement = findVisibleElement(selector)
 
   if (existingElement) {
     return Promise.resolve(existingElement)
@@ -60,7 +102,7 @@ const waitForElement = (selector, timeout = 2500) => {
     }, timeout)
 
     const observer = new MutationObserver(() => {
-      const element = visibleElement(selector)
+      const element = findVisibleElement(selector)
 
       if (!element) {
         return
@@ -112,7 +154,7 @@ const waitForFirstVisibleStep = (candidateSteps, timeout = 2500) => {
   })
 }
 
-const visibleModal = () => visibleElement(modalSelector)
+const visibleModal = () => visibleStructuralElement(modalSelector)
 
 const clickSelector = async (selector) => {
   const element = await waitForElement(selector)
@@ -140,7 +182,7 @@ const runAction = async (action) => {
     }
 
     await clickSelector(parameters.selector ?? `[data-tour="${parameters.trigger}"]`)
-    await waitForElement(modalSelector)
+    await waitForElement(modalSelector, actionTargetTimeout, visibleStructuralElement)
     await waitForNextPaint()
 
     return
@@ -173,7 +215,7 @@ const runAction = async (action) => {
   }
 
   if (action.action === 'wait-for') {
-    await waitForElement(parameters.selector)
+    await waitForElement(parameters.selector, actionTargetTimeout)
 
     return
   }
