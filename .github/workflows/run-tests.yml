@@ -92,6 +92,9 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Build workbench assets
+        run: composer build
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 

@@ -51,6 +51,14 @@ it('automates dependency updates with a supply chain cooldown', function (): voi
     expect(substr_count((string) $dependabot, 'default-days: 7'))->toBe(3);
 });
 
+it('builds Filament workbench assets before browser tests', function (): void {
+    $testWorkflow = file_get_contents(__DIR__.'/../../.github/workflows/run-tests.yml');
+
+    expect($testWorkflow)
+        ->toContain('- name: Build workbench assets')
+        ->toContain('run: composer build');
+});
+
 it('publishes a private vulnerability disclosure path', function (): void {
     $securityPolicy = file_get_contents(__DIR__.'/../../SECURITY.md');
 
