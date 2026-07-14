@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CoringaWc\FilamentTutorials\Support;
 
 use CoringaWc\FilamentTutorials\FilamentTutorial;
+use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
 use Filament\Panel;
 use InvalidArgumentException;
 use LogicException;
@@ -19,9 +20,19 @@ class TutorialManager
      */
     public function register(string $panelId, iterable $tutorials): void
     {
+        if (! TutorialProgressKey::isValid($panelId, FilamentTutorialProgress::MaximumPanelIdLength)) {
+            throw new InvalidArgumentException("Panel [{$panelId}] has an invalid tutorial progress key.");
+        }
+
         foreach ($tutorials as $tutorial) {
             $tutorial = $this->resolveTutorial($tutorial);
             $key = $tutorial->getKey();
+
+            if (! TutorialProgressKey::isValid($key, FilamentTutorialProgress::MaximumTutorialKeyLength)) {
+                throw new InvalidArgumentException("Tutorial [{$key}] has an invalid progress key.");
+            }
+
+            $this->ensureStepKeysAreValid($tutorial);
 
             if (isset($this->tutorialsByPanel[$panelId][$key])) {
                 throw new LogicException("Tutorial [{$key}] is already registered for panel [{$panelId}].");
@@ -64,5 +75,28 @@ class TutorialManager
         }
 
         return app($tutorial);
+    }
+
+    private function ensureStepKeysAreValid(FilamentTutorial $tutorial): void
+    {
+        $registeredStepKeys = [];
+
+        foreach ($tutorial->getSteps() as $step) {
+            $stepKey = $step->getKey();
+
+            if ($stepKey === null) {
+                continue;
+            }
+
+            if (! TutorialProgressKey::isValid($stepKey, FilamentTutorialProgress::MaximumStepKeyLength)) {
+                throw new InvalidArgumentException("Tutorial step [{$stepKey}] has an invalid progress key.");
+            }
+
+            if (isset($registeredStepKeys[$stepKey])) {
+                throw new LogicException("Tutorial step [{$stepKey}] is duplicated in tutorial [{$tutorial->getKey()}].");
+            }
+
+            $registeredStepKeys[$stepKey] = true;
+        }
     }
 }

@@ -7,17 +7,18 @@ namespace CoringaWc\FilamentTutorials\Support;
 use CoringaWc\FilamentTutorials\FilamentTutorial;
 use CoringaWc\FilamentTutorials\FilamentTutorialsPlugin;
 use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
+use CoringaWc\FilamentTutorials\TutorialStep;
 use Filament\Facades\Filament;
 use Filament\Pages\BasePage;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
-use Throwable;
 
 class TutorialPayloadFactory
 {
     public function __construct(
         private readonly TutorialManager $tutorialManager,
+        private readonly PanelAuthenticatedUserResolver $authenticatedUserResolver,
     ) {}
 
     /**
@@ -26,6 +27,7 @@ class TutorialPayloadFactory
      */
     public function forPanelAndScopes(string $panelId, array $scopes): array
     {
+        $scopes = $this->normalizeScopes($scopes);
         $progressContext = $this->progressContext($panelId);
 
         return [
@@ -38,7 +40,6 @@ class TutorialPayloadFactory
             'dismissalReminder' => $this->dismissalReminderPayload($panelId),
             'progress' => $progressContext['endpoint'] === null ? null : [
                 'endpoint' => $progressContext['endpoint'],
-                'csrfToken' => csrf_token(),
                 'panelId' => $panelId,
             ],
             'tutorials' => array_values(array_filter(array_map(
@@ -46,6 +47,16 @@ class TutorialPayloadFactory
                 $this->tutorialManager->forPanel($panelId),
             ))),
         ];
+    }
+
+    /**
+     * @param  array<int, string>  $scopes
+     */
+    public function hasTutorialForScopes(string $panelId, array $scopes): bool
+    {
+        $scopes = $this->normalizeScopes($scopes);
+
+        return array_any($this->tutorialManager->forPanel($panelId), fn (FilamentTutorial $tutorial): bool => $this->tutorialMatchesScopes($tutorial, $scopes));
     }
 
     /**
@@ -94,7 +105,7 @@ class TutorialPayloadFactory
                     'selector' => $this->selectorForTarget($step['target'] ?? null, $scopes),
                 ],
                 array_map(
-                    static fn ($step): array => $step->toArray(),
+                    static fn (TutorialStep $step): array => $step->toArray(),
                     $tutorial->getSteps(),
                 ),
             ),
@@ -156,6 +167,27 @@ class TutorialPayloadFactory
     }
 
     /**
+     * Some topbar render hooks do not receive page scopes, so use the Filament page route action as the stable fallback.
+     *
+     * @param  array<int, string>  $scopes
+     * @return array<int, string>
+     */
+    private function normalizeScopes(array $scopes): array
+    {
+        if ($scopes !== []) {
+            return array_values(array_unique($scopes));
+        }
+
+        $routeAction = request()->route()?->getActionName();
+
+        if (is_string($routeAction) && is_subclass_of($routeAction, BasePage::class)) {
+            return [$routeAction];
+        }
+
+        return [];
+    }
+
+    /**
      * @return array{endpoint: string|null, progress: array<string, FilamentTutorialProgress>}
      */
     private function progressContext(string $panelId): array
@@ -167,7 +199,7 @@ class TutorialPayloadFactory
             ];
         }
 
-        $authUser = $this->authenticatedUser();
+        $authUser = $this->authenticatedUserResolver->resolve($panelId);
 
         if (! $authUser instanceof Authenticatable || ! $this->progressTableExists() || ! Route::has('filament-tutorials.progress')) {
             return [
@@ -193,16 +225,5 @@ class TutorialPayloadFactory
     private function progressTableExists(): bool
     {
         return Schema::hasTable(config('filament-tutorials.progress.table', 'filament_tutorial_progress'));
-    }
-
-    private function authenticatedUser(): ?Authenticatable
-    {
-        try {
-            $user = Filament::auth()->user();
-        } catch (Throwable) {
-            $user = auth()->user();
-        }
-
-        return $user instanceof Authenticatable ? $user : null;
     }
 }

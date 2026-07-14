@@ -53,10 +53,14 @@ class InlineTutorialCollector
 
         $ownerClasses = array_unique($ownerClasses);
 
-        return array_values(array_filter(
+        /** @var list<class-string<HasFilamentTutorials>> $ownerClasses */
+        $ownerClasses = array_values(array_filter(
             $ownerClasses,
-            static fn (string $ownerClass): bool => is_subclass_of($ownerClass, HasFilamentTutorials::class),
+            static fn (mixed $ownerClass): bool => is_string($ownerClass)
+                && is_subclass_of($ownerClass, HasFilamentTutorials::class),
         ));
+
+        return $ownerClasses;
     }
 
     /**
@@ -72,10 +76,10 @@ class InlineTutorialCollector
 
         $tutorials = is_array($tutorials) ? $tutorials : [$tutorials];
 
-        return array_map(
+        return array_values(array_map(
             fn (FilamentTutorial|string $tutorial): FilamentTutorial => $this->resolveTutorial($tutorial, $ownerClass),
             $tutorials,
-        );
+        ));
     }
 
     /**

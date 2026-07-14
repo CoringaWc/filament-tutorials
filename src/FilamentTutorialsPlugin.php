@@ -52,7 +52,7 @@ class FilamentTutorialsPlugin implements Plugin
     protected ?string $dismissalReminderDescription = null;
 
     /** @var array<string, true> */
-    protected array $inlineTutorialsRegisteredForPanel = [];
+    protected array $bootedPanels = [];
 
     public static function make(): static
     {
@@ -210,20 +210,22 @@ class FilamentTutorialsPlugin implements Plugin
     {
         $panelId = $panel->getId();
 
-        if (! isset($this->inlineTutorialsRegisteredForPanel[$panelId])) {
-            app(TutorialManager::class)->register(
-                $panelId,
-                app(InlineTutorialCollector::class)->collect($panel),
-            );
-
-            $this->inlineTutorialsRegisteredForPanel[$panelId] = true;
+        if (isset($this->bootedPanels[$panelId])) {
+            return;
         }
+
+        app(TutorialManager::class)->register(
+            $panelId,
+            app(InlineTutorialCollector::class)->collect($panel),
+        );
 
         $this->registerRuntimeHook($panel);
         $this->registerLauncherHook($panel);
         $this->registerPageTargetHook($panel);
         $this->registerConfiguredRenderHookTargets($panel);
         $this->registerNavigationTargetAttributes($panel);
+
+        $this->bootedPanels[$panelId] = true;
     }
 
     /**
@@ -251,7 +253,7 @@ class FilamentTutorialsPlugin implements Plugin
         FilamentView::registerRenderHook(
             PanelsRenderHook::PAGE_END,
             function (array $scopes = []) use ($panel): string {
-                if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
+                if (! $this->isCurrentPanel($panel)) {
                     return '';
                 }
 
@@ -273,11 +275,11 @@ class FilamentTutorialsPlugin implements Plugin
         FilamentView::registerRenderHook(
             $renderHook,
             function (array $scopes = []) use ($panel): string {
-                if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
+                if (! $this->isCurrentPanel($panel)) {
                     return '';
                 }
 
-                if (app(TutorialManager::class)->forPanel($panel->getId()) === []) {
+                if (! app(TutorialPayloadFactory::class)->hasTutorialForScopes($panel->getId(), $scopes)) {
                     return '';
                 }
 
@@ -295,7 +297,7 @@ class FilamentTutorialsPlugin implements Plugin
         FilamentView::registerRenderHook(
             PanelsRenderHook::PAGE_START,
             function (array $scopes = []) use ($panel): string {
-                if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
+                if (! $this->isCurrentPanel($panel)) {
                     return '';
                 }
 
@@ -323,7 +325,7 @@ class FilamentTutorialsPlugin implements Plugin
             FilamentView::registerRenderHook(
                 $renderHook,
                 function () use ($panel, $targetKey): string {
-                    if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
+                    if (! $this->isCurrentPanel($panel)) {
                         return '';
                     }
 
@@ -339,7 +341,7 @@ class FilamentTutorialsPlugin implements Plugin
     {
         NavigationItem::configureUsing(function (NavigationItem $item) use ($panel): void {
             $item->extraAttributes(function () use ($item, $panel): array {
-                if (Filament::getCurrentPanel()->getId() !== $panel->getId()) {
+                if (! $this->isCurrentPanel($panel)) {
                     return [];
                 }
 
@@ -379,6 +381,11 @@ class FilamentTutorialsPlugin implements Plugin
         }
 
         return null;
+    }
+
+    protected function isCurrentPanel(Panel $panel): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === $panel->getId();
     }
 
     protected function normalizeNavigationUrl(?string $url): ?string

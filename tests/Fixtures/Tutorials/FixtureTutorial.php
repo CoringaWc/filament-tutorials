@@ -12,6 +12,10 @@ class FixtureTutorial extends FilamentTutorial
 {
     protected static ?string $page = WorkbenchDashboard::class;
 
+    /**
+     * @param  list<TutorialStep>|null  $steps
+     * @return ($steps is null ? list<TutorialStep> : static)
+     */
     public function steps(?array $steps = null): array|static
     {
         if ($steps !== null) {

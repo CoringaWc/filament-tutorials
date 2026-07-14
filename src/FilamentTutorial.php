@@ -74,7 +74,7 @@ class FilamentTutorial
 
     /**
      * @param  list<TutorialStep>|null  $steps
-     * @return list<TutorialStep>|static
+     * @return ($steps is null ? list<TutorialStep> : static)
      */
     public function steps(?array $steps = null): array|static
     {
@@ -92,9 +92,7 @@ class FilamentTutorial
      */
     public function getSteps(): array
     {
-        $steps = $this->steps();
-
-        return is_array($steps) ? $steps : [];
+        return $this->steps();
     }
 
     public function autoStart(bool $condition = true): static

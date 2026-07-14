@@ -6,24 +6,26 @@ namespace CoringaWc\FilamentTutorials\Actions;
 
 use CoringaWc\FilamentTutorials\FilamentTutorial;
 use CoringaWc\FilamentTutorials\Models\FilamentTutorialProgress;
+use CoringaWc\FilamentTutorials\Support\PanelAuthenticatedUserResolver;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
+use CoringaWc\FilamentTutorials\Support\TutorialProgressKey;
 use CoringaWc\FilamentTutorials\Support\TutorialProgressMetadata;
-use Filament\PanelRegistry;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Registra eventos de progresso de tutoriais para o usuário autenticado sem aceitar identidade enviada pelo navegador.
  */
-final class RecordTutorialProgressAction
+final readonly class RecordTutorialProgressAction
 {
     public function __construct(
-        private readonly TutorialManager $tutorialManager,
-        private readonly PanelRegistry $panelRegistry,
+        private TutorialManager $tutorialManager,
+        private PanelAuthenticatedUserResolver $authenticatedUserResolver,
     ) {}
 
     /**
@@ -33,21 +35,40 @@ final class RecordTutorialProgressAction
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $panelId = (string) $request->input('panel_id');
-        $authUser = $this->authenticatedUser($request, $panelId);
+        if (! (bool) config('filament-tutorials.progress.enabled', true)) {
+            return response()->json(['recorded' => false]);
+        }
+
+        $panelId = $request->input('panel_id');
+
+        if (! is_string($panelId)) {
+            return response()->json(['recorded' => false]);
+        }
+
+        $authUser = $this->authenticatedUserResolver->resolve($panelId);
 
         if (! $authUser instanceof Authenticatable || ! $this->progressTableExists()) {
             return response()->json(['recorded' => false]);
         }
 
+        /** @var array{panel_id: string, tutorial_key: string, event: string, step_key?: string|null, step_index?: int|null, metadata?: array<string, mixed>} $validated */
+        $validated = $request->validate([
+            'panel_id' => ['required', 'string', 'max:'.FilamentTutorialProgress::MaximumPanelIdLength, 'regex:/^[a-z0-9][a-z0-9._-]*$/'],
+            'tutorial_key' => ['required', 'string', 'max:'.FilamentTutorialProgress::MaximumTutorialKeyLength, 'regex:/^[a-z0-9][a-z0-9._-]*$/'],
+            'event' => ['required', 'string', Rule::in(['started', 'completed', 'dismissed', 'restarted'])],
+            'step_key' => ['nullable', 'string', 'max:'.FilamentTutorialProgress::MaximumStepKeyLength, 'regex:/^[a-z0-9][a-z0-9._-]*$/'],
+            'step_index' => ['nullable', 'integer', 'between:0,'.TutorialProgressMetadata::MaximumStepCount],
+            'metadata' => ['sometimes', 'array'],
+        ]);
+
         $progress = $this->handle(
             authUser: $authUser,
-            panelId: $panelId,
-            tutorialKey: (string) $request->input('tutorial_key'),
-            event: (string) $request->input('event'),
-            stepKey: is_string($request->input('step_key')) ? $request->input('step_key') : null,
-            stepIndex: is_numeric($request->input('step_index')) ? (int) $request->input('step_index') : null,
-            metadata: is_array($request->input('metadata')) ? $request->input('metadata') : [],
+            panelId: $validated['panel_id'],
+            tutorialKey: $validated['tutorial_key'],
+            event: $validated['event'],
+            stepKey: $validated['step_key'] ?? null,
+            stepIndex: $validated['step_index'] ?? null,
+            metadata: $validated['metadata'] ?? [],
         );
 
         return response()->json([
@@ -76,9 +97,14 @@ final class RecordTutorialProgressAction
         $this->ensureTutorialIsRegistered($panelId, $tutorialKey);
 
         $now = Carbon::now();
+        $userType = $authUser::class;
+        $userId = (string) $authUser->getAuthIdentifier();
+
+        $this->validateIdentity($userType, $userId);
+
         $identity = [
-            'user_type' => $authUser::class,
-            'user_id' => (string) $authUser->getAuthIdentifier(),
+            'user_type' => $userType,
+            'user_id' => $userId,
             'panel_id' => $panelId,
             'tutorial_key' => $tutorialKey,
         ];
@@ -96,15 +122,18 @@ final class RecordTutorialProgressAction
                 'started_at' => $now,
                 'completed_at' => null,
                 'dismissed_at' => null,
+                'restarted_at' => null,
             ],
             'completed' => [
                 ...$updates,
                 'status' => FilamentTutorialProgress::StatusCompleted,
                 'completed_at' => $now,
+                'dismissed_at' => null,
             ],
             'dismissed' => [
                 ...$updates,
                 'status' => FilamentTutorialProgress::StatusDismissed,
+                'completed_at' => null,
                 'dismissed_at' => $now,
             ],
             'restarted' => [
@@ -130,16 +159,6 @@ final class RecordTutorialProgressAction
         return Schema::hasTable(config('filament-tutorials.progress.table', 'filament_tutorial_progress'));
     }
 
-    private function authenticatedUser(Request $request, string $panelId): ?Authenticatable
-    {
-        $panel = $this->panelRegistry->get($panelId, false);
-        $user = $panel === null
-            ? $request->user()
-            : $panel->auth()->user();
-
-        return $user instanceof Authenticatable ? $user : null;
-    }
-
     /**
      * @throws ValidationException
      */
@@ -163,11 +182,11 @@ final class RecordTutorialProgressAction
     {
         $messages = [];
 
-        if (! $this->isValidKey($panelId)) {
+        if (! TutorialProgressKey::isValid($panelId, FilamentTutorialProgress::MaximumPanelIdLength)) {
             $messages['panel_id'] = __('The panel is invalid.');
         }
 
-        if (! $this->isValidKey($tutorialKey)) {
+        if (! TutorialProgressKey::isValid($tutorialKey, FilamentTutorialProgress::MaximumTutorialKeyLength)) {
             $messages['tutorial_key'] = __('The tutorial is invalid.');
         }
 
@@ -175,11 +194,11 @@ final class RecordTutorialProgressAction
             $messages['event'] = __('The progress event is invalid.');
         }
 
-        if ($stepKey !== null && ! $this->isValidKey($stepKey)) {
+        if ($stepKey !== null && ! TutorialProgressKey::isValid($stepKey, FilamentTutorialProgress::MaximumStepKeyLength)) {
             $messages['step_key'] = __('The tutorial step is invalid.');
         }
 
-        if ($stepIndex !== null && $stepIndex < 0) {
+        if ($stepIndex !== null && ($stepIndex < 0 || $stepIndex > TutorialProgressMetadata::MaximumStepCount)) {
             $messages['step_index'] = __('The tutorial step is invalid.');
         }
 
@@ -188,9 +207,18 @@ final class RecordTutorialProgressAction
         }
     }
 
-    private function isValidKey(string $key): bool
+    /**
+     * @throws ValidationException
+     */
+    private function validateIdentity(string $userType, string $userId): void
     {
-        return strlen($key) <= 255
-            && preg_match('/^[a-z0-9][a-z0-9._-]*$/', $key) === 1;
+        if (strlen($userType) <= FilamentTutorialProgress::MaximumUserTypeLength
+            && strlen($userId) <= FilamentTutorialProgress::MaximumUserIdLength) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'user' => __('The authenticated user identity is invalid.'),
+        ]);
     }
 }

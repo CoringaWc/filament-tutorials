@@ -6,4 +6,4 @@ parameters:
     - src
     - tests
     - workbench/app
-  level: 6
+  level: 8

@@ -40,6 +40,11 @@ class TutorialStep
         return $this;
     }
 
+    public function getKey(): ?string
+    {
+        return $this->key;
+    }
+
     public function target(string|TutorialTarget $target): static
     {
         $this->target = is_string($target) ? TutorialTarget::custom($target) : $target;
@@ -107,7 +112,7 @@ class TutorialStep
      */
     public function before(string $action, array $parameters = []): static
     {
-        $this->before[] = compact('action', 'parameters');
+        $this->before[] = ['action' => $action, 'parameters' => $parameters];
 
         return $this;
     }
@@ -117,7 +122,7 @@ class TutorialStep
      */
     public function after(string $action, array $parameters = []): static
     {
-        $this->after[] = compact('action', 'parameters');
+        $this->after[] = ['action' => $action, 'parameters' => $parameters];
 
         return $this;
     }

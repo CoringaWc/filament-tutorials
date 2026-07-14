@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 
@@ -44,6 +45,10 @@ return [
         'enabled' => true,
         'table' => 'filament_tutorial_progress',
         'route_path' => 'filament-tutorials/progress',
-        'middleware' => ['web'],
+        'middleware' => ['web', 'throttle:filament-tutorials-progress'],
+        'rate_limit' => [
+            'max_attempts' => 120,
+            'decay_seconds' => 60,
+        ],
     ],
 ];

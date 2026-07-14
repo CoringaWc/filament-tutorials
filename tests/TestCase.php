@@ -18,6 +18,7 @@ use Filament\Support\Livewire\Partials\DataStoreOverride;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\ViewErrorBag;
 use Livewire\LivewireServiceProvider;
 use Livewire\Mechanisms\DataStore;
@@ -34,9 +35,17 @@ abstract class TestCase extends Orchestra
     {
         parent::setUp();
 
-        $this->app->singleton(DataStore::class, DataStoreOverride::class);
-        $this->app['session.store']->start();
-        $this->app['view']->share('errors', new ViewErrorBag);
+        $app = $this->app;
+
+        assert($app instanceof Application);
+
+        $app->singleton(DataStore::class, DataStoreOverride::class);
+
+        $session = $app->make('session.store');
+        $view = $app->make('view');
+
+        $session->start();
+        $view->share('errors', new ViewErrorBag);
 
         Filament::setCurrentPanel('admin');
         Filament::bootCurrentPanel();

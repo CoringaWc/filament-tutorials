@@ -24,6 +24,16 @@ use Illuminate\Support\Carbon;
  */
 class FilamentTutorialProgress extends Model
 {
+    public const MaximumPanelIdLength = 64;
+
+    public const MaximumStepKeyLength = 255;
+
+    public const MaximumTutorialKeyLength = 191;
+
+    public const MaximumUserIdLength = 191;
+
+    public const MaximumUserTypeLength = 191;
+
     public const StatusStarted = 'started';
 
     public const StatusCompleted = 'completed';
@@ -46,14 +56,16 @@ class FilamentTutorialProgress extends Model
         'restarted_at',
     ];
 
+    #[\Override]
     public function getTable(): string
     {
-        return config('filament-tutorials.progress.table', 'filament_tutorial_progress');
+        return (string) config('filament-tutorials.progress.table', 'filament_tutorial_progress');
     }
 
     /**
      * @return array<string, string>
      */
+    #[\Override]
     protected function casts(): array
     {
         return [

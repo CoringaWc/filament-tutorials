@@ -12,10 +12,10 @@ return new class extends Migration
     {
         Schema::create(config('filament-tutorials.progress.table', 'filament_tutorial_progress'), function (Blueprint $table): void {
             $table->id();
-            $table->string('user_type');
-            $table->string('user_id');
-            $table->string('panel_id');
-            $table->string('tutorial_key');
+            $table->string('user_type', 191);
+            $table->string('user_id', 191);
+            $table->string('panel_id', 64);
+            $table->string('tutorial_key', 191);
             $table->string('status');
             $table->string('last_step_key')->nullable();
             $table->unsignedInteger('last_step_index')->nullable();

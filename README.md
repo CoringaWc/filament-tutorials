@@ -198,6 +198,7 @@ The runtime records:
 - `started` when the tutorial starts.
 - `completed` when the user finishes.
 - `dismissed` when the user closes early.
+- `restarted` when a completed or dismissed tutorial is opened again from the launcher.
 
 If a tutorial has `->autoStart()`, it starts automatically until that user completes or dismisses it:
 
@@ -215,6 +216,28 @@ FilamentTutorial::make('first-run-contracting')
 
 Progress metadata is sanitized by allowlist before persistence. Do not send credentials, cookies, tokens, raw browser fingerprints, or portal session material in tutorial metadata.
 
+Tutorial, panel, and explicit step keys used by progress persistence must start with a lowercase letter or number and may contain only lowercase letters, numbers, `.`, `_`, and `-`. Invalid or duplicated keys fail during panel registration so a tutorial cannot appear to work while silently losing progress.
+
+### Progress endpoint security
+
+The progress endpoint uses the requested panel's configured authentication guard and never accepts a user id from JavaScript. In non-local environments, the authenticated model must implement Filament's `FilamentUser` contract and pass `canAccessPanel()` for that panel. This mirrors Filament's own panel access rule and prevents a session from writing progress for a panel it cannot open.
+
+The default middleware stack is:
+
+```php
+['web', 'throttle:filament-tutorials-progress']
+```
+
+Keep the `web` middleware, because the runtime reads Laravel's standard CSRF meta token and the endpoint requires session authentication and CSRF validation. The named limiter defaults to 120 requests per 60 seconds per client IP and can be adjusted in `filament-tutorials.progress.rate_limit`. If you replace the middleware array, provide equivalent session, CSRF, and rate-limit protection.
+
+When persistence is disabled, unavailable, rejected, or rate-limited, the runtime leaves the tutorial usable and dispatches a browser event instead of exposing response details in the console:
+
+```js
+document.addEventListener('filament-tutorials:progress-failed', (event) => {
+  const { event: progressEvent, status } = event.detail
+})
+```
+
 ## Workbench
 
 The repository uses `coringawc/filament-plugin-workbench`.
@@ -228,10 +251,14 @@ Useful package gates:
 
 ```bash
 ./packages/workbench/bin/sail composer validate --strict
+./packages/workbench/bin/sail composer audit
 ./packages/workbench/bin/sail npm run check
+./packages/workbench/bin/sail npm audit --audit-level=moderate
 ./packages/workbench/bin/sail npm run build
 ./packages/workbench/bin/sail composer run build
-./packages/workbench/bin/sail php vendor/bin/pest --compact
+./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Architecture tests/Feature tests/Unit
+./packages/workbench/bin/sail php vendor/bin/pest --compact tests/Browser
 ./packages/workbench/bin/sail php vendor/bin/phpstan analyse --memory-limit=1G
+./packages/workbench/bin/sail php vendor/bin/rector process --dry-run --no-progress-bar
 ./packages/workbench/bin/sail pint --dirty --format agent
 ```

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
+use Workbench\App\Filament\Resources\TutorialRecords\Pages\ListTutorialRecords;
 
 uses(RefreshDatabase::class);
 
@@ -207,6 +208,14 @@ it('keeps the tutorial launcher and popover usable on mobile and dark mode', fun
 it('lets the user skip from the first popover to the final launcher reminder', function (): void {
     visit('/admin')
         ->assertVisible('[data-filament-tutorials-launcher]')
+        ->assertScript(
+            <<<'JS'
+                JSON.parse(
+                    document.querySelector('[data-filament-tutorials-runtime]')?.dataset.payload ?? '{}'
+                ).progress?.endpoint ?? null
+            JS,
+            '/filament-tutorials/progress',
+        )
         ->click('[data-filament-tutorials-launcher]')
         ->wait(1)
         ->assertSee('Painel do laboratório')
@@ -240,11 +249,10 @@ it('lets the user skip from the first popover to the final launcher reminder', f
                     const payload = JSON.parse(runtime?.dataset.payload ?? '{}')
                     const tutorial = (payload.tutorials ?? []).find((item) => item.key === 'workbench-dashboard')
 
-                    return tutorial?.autoStart === false
-                        && tutorial?.progressStatus === 'dismissed'
+                    return tutorial?.progressStatus ?? null
                 })()
             JS,
-            true,
+            'dismissed',
         );
 });
 
@@ -269,4 +277,43 @@ it('shows the launcher reminder when the first popover is closed', function (): 
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
         ->assertScript('document.body.classList.contains("driver-active")', false);
+});
+
+it('resolves page and render hook markers to visible Filament containers', function (): void {
+    visit(ListTutorialRecords::getUrl())
+        ->assertVisible('[data-filament-tutorials-launcher]')
+        ->click('[data-filament-tutorials-launcher]')
+        ->wait(1)
+        ->assertSee('Lista de registros')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const activeTarget = document.querySelector('.driver-active-element')
+
+                    return Boolean(
+                        activeTarget
+                        && activeTarget.querySelector('[data-filament-tutorials-target-marker][data-tour]')
+                    )
+                })()
+            JS,
+            true,
+        )
+        ->click('.driver-popover-next-btn')
+        ->wait(1)
+        ->assertSee('Tabela do Resource')
+        ->assertScript(
+            <<<'JS'
+                (() => {
+                    const activeTarget = document.querySelector('.driver-active-element')
+
+                    return Boolean(
+                        activeTarget
+                        && activeTarget.querySelector('[data-filament-tutorials-target-marker][data-tour]')
+                    )
+                })()
+            JS,
+            true,
+        )
+        ->assertNoJavaScriptErrors()
+        ->assertNoConsoleLogs();
 });

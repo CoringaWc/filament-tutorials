@@ -6,6 +6,7 @@ use CoringaWc\FilamentTutorials\Support\TutorialPayloadFactory;
 use CoringaWc\FilamentTutorials\Support\TutorialTargetKeys;
 use CoringaWc\FilamentTutorials\TutorialStep;
 use Filament\Facades\Filament;
+use Filament\Panel;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
 use Workbench\App\Filament\Resources\TutorialRecords\Pages\ListTutorialRecords;
 
@@ -73,7 +74,11 @@ it('builds localized payload for the current page scope only', function (): void
 });
 
 it('resolves stable selectors for page action and render hook targets', function (): void {
-    $payload = app(TutorialPayloadFactory::class)->forPanelAndScopes(Filament::getCurrentPanel()->getId(), [
+    $panel = Filament::getCurrentPanel();
+
+    assert($panel instanceof Panel);
+
+    $payload = app(TutorialPayloadFactory::class)->forPanelAndScopes($panel->getId(), [
         ListTutorialRecords::class,
     ]);
 

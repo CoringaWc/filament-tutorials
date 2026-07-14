@@ -5,13 +5,18 @@ declare(strict_types=1);
 use CoringaWc\FilamentTutorials\Support\InlineTutorialCollector;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use Filament\Facades\Filament;
+use Filament\Panel;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
 use Workbench\App\Filament\Resources\TutorialRecords\Pages\ListTutorialRecords;
 use Workbench\App\Filament\Resources\TutorialRecords\Pages\ManageTutorialRecordRelations;
 use Workbench\App\Filament\Resources\TutorialRecords\TutorialRecordResource;
 
 it('collects inline tutorials from panel pages resources and resource pages', function (): void {
-    $tutorials = app(InlineTutorialCollector::class)->collect(Filament::getCurrentPanel());
+    $panel = Filament::getCurrentPanel();
+
+    assert($panel instanceof Panel);
+
+    $tutorials = app(InlineTutorialCollector::class)->collect($panel);
 
     $tutorialsByKey = collect($tutorials)->keyBy(fn ($tutorial) => $tutorial->getKey());
 
@@ -33,7 +38,11 @@ it('collects inline tutorials from panel pages resources and resource pages', fu
 });
 
 it('registers inline page tutorials during panel boot', function (): void {
-    $tutorial = app(TutorialManager::class)->find(Filament::getCurrentPanel(), 'workbench-dashboard');
+    $panel = Filament::getCurrentPanel();
+
+    assert($panel instanceof Panel);
+
+    $tutorial = app(TutorialManager::class)->find($panel, 'workbench-dashboard');
 
     expect($tutorial)
         ->not->toBeNull()

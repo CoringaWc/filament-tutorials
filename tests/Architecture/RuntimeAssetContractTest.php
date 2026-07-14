@@ -5,6 +5,7 @@ declare(strict_types=1);
 it('keeps the runtime on public APIs and away from fragile selectors', function (): void {
     $runtime = file_get_contents(__DIR__.'/../../resources/js/filament-tutorials.js');
     $styles = file_get_contents(__DIR__.'/../../resources/css/filament-tutorials.css');
+    $targetMarkerView = file_get_contents(__DIR__.'/../../resources/views/target-marker.blade.php');
 
     expect($runtime)
         ->toContain("from 'driver.js'")
@@ -20,7 +21,14 @@ it('keeps the runtime on public APIs and away from fragile selectors', function 
         ->toContain('const escapeHtml')
         ->toContain('title: escapeHtml(step.title)')
         ->toContain('description: escapeHtml(step.description)')
-        ->toContain('doneBtnText: escapedLabels.done');
+        ->toContain('doneBtnText: escapedLabels.done')
+        ->toContain('meta[name="csrf-token"]')
+        ->toContain('keepalive: true')
+        ->toContain('responsePayload?.recorded !== true')
+        ->toContain("'filament-tutorials:progress-failed'")
+        ->toContain("document.addEventListener('livewire:navigating', destroyActiveDriver)");
+
+    expect(str_contains((string) $runtime, 'progress.csrfToken'))->toBeFalse();
 
     foreach ([
         'setInterval',
@@ -37,10 +45,24 @@ it('keeps the runtime on public APIs and away from fragile selectors', function 
 
     expect($styles)
         ->toContain('@import "driver.js/dist/driver.css"')
+        ->toContain('var(--primary-700')
+        ->toContain('var(--gray-900')
+        ->toContain('[data-filament-tutorials-target-marker]')
         ->toContain('.filament-tutorials-popover .filament-tutorials-skip-btn')
         ->toContain(':is(.driver-popover-prev-btn, .filament-tutorials-skip-btn)');
 
-    expect(str_contains((string) $styles, '.fi-'))->toBeFalse();
+    expect(str_contains((string) $styles, '.fi-'))->toBeFalse()
+        ->and(str_contains((string) $targetMarkerView, 'style='))->toBeFalse();
+});
+
+it('keeps the progress identity index compatible with MySQL utf8mb4 limits', function (): void {
+    $migration = file_get_contents(__DIR__.'/../../database/migrations/create_filament_tutorial_progress_table.php');
+
+    expect($migration)
+        ->toContain("string('user_type', 191)")
+        ->toContain("string('user_id', 191)")
+        ->toContain("string('panel_id', 64)")
+        ->toContain("string('tutorial_key', 191)");
 });
 
 it('builds distributable package assets', function (): void {

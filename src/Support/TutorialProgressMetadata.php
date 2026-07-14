@@ -8,11 +8,11 @@ use Illuminate\Support\Str;
 
 final class TutorialProgressMetadata
 {
-    private const MaximumSourceLength = 64;
+    private const int MaximumSourceLength = 64;
 
-    private const MaximumStepCount = 1000;
+    public const int MaximumStepCount = 1000;
 
-    private const MaximumTriggerLength = 255;
+    private const int MaximumTriggerLength = 255;
 
     /**
      * @param  array<string, mixed>  $metadata
@@ -27,7 +27,7 @@ final class TutorialProgressMetadata
         }
 
         if (is_int($metadata['step_count'] ?? null) || (is_string($metadata['step_count'] ?? null) && ctype_digit($metadata['step_count']))) {
-            $allowedMetadata['step_count'] = min((int) $metadata['step_count'], self::MaximumStepCount);
+            $allowedMetadata['step_count'] = max(0, min((int) $metadata['step_count'], self::MaximumStepCount));
         }
 
         if (is_string($metadata['trigger'] ?? null)) {

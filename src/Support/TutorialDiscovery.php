@@ -25,10 +25,12 @@ class TutorialDiscovery
 
         /** @var SplFileInfo $file */
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path)) as $file) {
-            if (! $file->isFile() || $file->getExtension() !== 'php') {
+            if (! $file->isFile()) {
                 continue;
             }
-
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
             $relativePath = str_replace($basePath, '', $file->getRealPath() ?: $file->getPathname());
             $class = rtrim($namespace, '\\').'\\'.str_replace(
                 ['/', '.php'],

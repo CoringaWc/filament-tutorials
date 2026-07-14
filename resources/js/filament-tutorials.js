@@ -3,12 +3,14 @@ import '../css/filament-tutorials.css'
 
 const runtimeSelector = '[data-filament-tutorials-runtime]'
 const launcherSelector = '[data-filament-tutorials-launcher]'
+const targetMarkerSelector = '[data-filament-tutorials-target-marker]'
 const modalSelector = '[aria-modal="true"]:not(.filament-tutorials-popover)'
 const optionalTargetTimeout = 80
 const actionTargetTimeout = 10000
 let activeDriver = null
 let alpineComponentRegistered = false
 let startingTutorial = false
+const payloadCache = new WeakMap()
 
 const destroyActiveDriver = () => {
   if (!activeDriver) {
@@ -69,6 +71,20 @@ const elementOrDescendantHasVisibleBox = (element) => {
 const visibleElement = (selector) => Array.from(document.querySelectorAll(selector))
   .find(hasVisibleBox) ?? null
 
+const markerContainer = (marker) => {
+  for (let container = marker.parentElement; container; container = container.parentElement) {
+    if (hasVisibleBox(container)) {
+      return container
+    }
+  }
+
+  return null
+}
+
+const visibleTutorialTarget = (selector) => Array.from(document.querySelectorAll(selector))
+  .map((element) => element.matches(targetMarkerSelector) ? markerContainer(element) : element)
+  .find((element) => element && hasVisibleBox(element)) ?? null
+
 const visibleStructuralElement = (selector) => Array.from(document.querySelectorAll(selector))
   .find((element) => elementAndAncestorsAreVisible(element) && elementOrDescendantHasVisibleBox(element)) ?? null
 
@@ -114,6 +130,7 @@ const waitForElement = (selector, timeout = 2500, findVisibleElement = visibleEl
     })
 
     observer.observe(document.documentElement, {
+      attributeFilter: ['aria-hidden', 'class', 'hidden', 'style'],
       attributes: true,
       childList: true,
       subtree: true,
@@ -122,7 +139,7 @@ const waitForElement = (selector, timeout = 2500, findVisibleElement = visibleEl
 }
 
 const waitForFirstVisibleStep = (candidateSteps, timeout = 2500) => {
-  const visibleCandidate = candidateSteps.find((candidate) => visibleElement(candidate.step.selector))
+  const visibleCandidate = candidateSteps.find((candidate) => visibleTutorialTarget(candidate.step.selector))
 
   if (visibleCandidate) {
     return Promise.resolve(visibleCandidate)
@@ -135,7 +152,7 @@ const waitForFirstVisibleStep = (candidateSteps, timeout = 2500) => {
     }, timeout)
 
     const observer = new MutationObserver(() => {
-      const candidate = candidateSteps.find((item) => visibleElement(item.step.selector))
+      const candidate = candidateSteps.find((item) => visibleTutorialTarget(item.step.selector))
 
       if (!candidate) {
         return
@@ -147,6 +164,7 @@ const waitForFirstVisibleStep = (candidateSteps, timeout = 2500) => {
     })
 
     observer.observe(document.documentElement, {
+      attributeFilter: ['aria-hidden', 'class', 'hidden', 'style'],
       attributes: true,
       childList: true,
       subtree: true,
@@ -279,7 +297,11 @@ const waitForStepTarget = async (step) => {
   }
 
   try {
-    await waitForElement(step.selector, step.optional ? optionalTargetTimeout : 2500)
+    await waitForElement(
+      step.selector,
+      step.optional ? optionalTargetTimeout : 2500,
+      visibleTutorialTarget,
+    )
 
     return true
   } catch (error) {
@@ -320,7 +342,7 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character
 }[character]))
 
 const driverStep = (step) => ({
-  element: step.selector,
+  element: () => visibleTutorialTarget(step.selector),
   popover: {
     title: escapeHtml(step.title),
     description: escapeHtml(step.description),
@@ -368,6 +390,12 @@ const removeDismissalReminderButton = (popover) => {
   popover.footerButtons.querySelector('[data-filament-tutorials-skip]')?.remove()
 }
 
+const dispatchProgressFailure = (event, status = null) => {
+  document.dispatchEvent(new CustomEvent('filament-tutorials:progress-failed', {
+    detail: { event, status },
+  }))
+}
+
 const persistTutorialProgress = (runtime, tutorial, event, step = null, stepIndex = null, stepCount = null) => {
   const progress = runtimePayload(runtime).progress
 
@@ -380,13 +408,18 @@ const persistTutorialProgress = (runtime, tutorial, event, step = null, stepInde
     'Content-Type': 'application/json',
   }
 
-  if (progress.csrfToken) {
-    headers['X-CSRF-TOKEN'] = progress.csrfToken
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+
+  if (csrfToken) {
+    headers['X-CSRF-TOKEN'] = csrfToken
   }
+
+  tutorial.progressStatus = ['completed', 'dismissed'].includes(event) ? event : 'started'
 
   window.fetch(progress.endpoint, {
     method: 'POST',
     credentials: 'same-origin',
+    keepalive: true,
     headers,
     body: JSON.stringify({
       panel_id: progress.panelId,
@@ -399,7 +432,19 @@ const persistTutorialProgress = (runtime, tutorial, event, step = null, stepInde
         step_count: stepCount ?? tutorial.steps?.length ?? 0,
       },
     }),
-  }).catch((error) => console.error(error))
+  }).then(async (response) => {
+    let responsePayload = null
+
+    try {
+      responsePayload = await response.json()
+    } catch {}
+
+    if (!response.ok || responsePayload?.recorded !== true) {
+      dispatchProgressFailure(event, response.status)
+    }
+  }).catch(() => {
+    dispatchProgressFailure(event)
+  })
 }
 
 const interactiveSelector = [
@@ -486,7 +531,9 @@ const startTutorial = async (runtime, tutorial) => {
     steps = stepsWithFirstDismissalLayout(driverSteps(activeSteps), reminderStep)
   }
 
-  persistTutorialProgress(runtime, tutorial, 'started', activeSteps[0], 0, originalStepCount)
+  const startEvent = ['completed', 'dismissed'].includes(tutorial.progressStatus) ? 'restarted' : 'started'
+
+  persistTutorialProgress(runtime, tutorial, startEvent, activeSteps[0], 0, originalStepCount)
 
   const ensureDismissalReminderIndex = async (currentDriver) => {
     const existingIndex = activeSteps.findIndex((step) => step.dismissalReminder)
@@ -748,7 +795,13 @@ const startTutorial = async (runtime, tutorial) => {
   activeDriver.drive()
 }
 
-const runtimePayload = (runtime) => JSON.parse(runtime.dataset.payload ?? '{}')
+const runtimePayload = (runtime) => {
+  if (!payloadCache.has(runtime)) {
+    payloadCache.set(runtime, JSON.parse(runtime.dataset.payload ?? '{}'))
+  }
+
+  return payloadCache.get(runtime)
+}
 
 const currentTutorial = (payload) => {
   const tutorials = payload.tutorials ?? []
@@ -931,3 +984,4 @@ if (document.readyState === 'loading') {
 }
 
 document.addEventListener('livewire:navigated', boot)
+document.addEventListener('livewire:navigating', destroyActiveDriver)

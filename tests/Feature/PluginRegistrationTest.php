@@ -5,12 +5,15 @@ declare(strict_types=1);
 use CoringaWc\FilamentTutorials\FilamentTutorialsPlugin;
 use CoringaWc\FilamentTutorials\Support\TutorialManager;
 use Filament\Facades\Filament;
+use Filament\Panel;
 use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Workbench\App\Filament\Pages\WorkbenchDashboard;
 
 it('registers tutorials for the current panel', function (): void {
     $panel = Filament::getCurrentPanel();
+
+    assert($panel instanceof Panel);
 
     $tutorials = app(TutorialManager::class)->forPanel($panel);
 
@@ -34,6 +37,8 @@ it('registers tutorials for the current panel', function (): void {
 it('keeps the panel tutorial registry after scoped instances are flushed', function (): void {
     $panel = Filament::getCurrentPanel();
 
+    assert($panel instanceof Panel);
+
     expect(app(TutorialManager::class)->forPanel($panel))
         ->toHaveKey('workbench-dashboard');
 
@@ -45,6 +50,9 @@ it('keeps the panel tutorial registry after scoped instances are flushed', funct
 
 it('does not duplicate inline tutorials when the panel boots again', function (): void {
     $panel = Filament::getCurrentPanel();
+
+    assert($panel instanceof Panel);
+
     $plugin = $panel->getPlugin('filament-tutorials');
 
     expect(fn () => $plugin->boot($panel))
@@ -65,6 +73,16 @@ it('uses the user menu launcher position by default', function (): void {
         ])
         ->and(config('filament-tutorials.launcher_render_hook'))
         ->toBeNull();
+});
+
+it('protects the progress endpoint with the web stack and a named rate limiter', function (): void {
+    expect(config('filament-tutorials.progress.middleware'))
+        ->toBe(['web', 'throttle:filament-tutorials-progress'])
+        ->and(config('filament-tutorials.progress.rate_limit'))
+        ->toBe([
+            'max_attempts' => 120,
+            'decay_seconds' => 60,
+        ]);
 });
 
 it('enables dismissal reminder by default and allows panel-level overrides', function (): void {

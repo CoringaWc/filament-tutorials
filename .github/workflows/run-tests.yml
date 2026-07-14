@@ -10,6 +10,9 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -30,10 +33,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
@@ -47,11 +50,17 @@ jobs:
       - name: Validate Composer metadata
         run: composer validate --strict
 
+      - name: Audit PHP dependencies
+        run: composer audit
+
       - name: Execute tests
-        run: vendor/bin/pest --compact
+        run: vendor/bin/pest tests/Architecture tests/Feature tests/Unit --compact
 
       - name: Execute static analysis
         run: vendor/bin/phpstan analyse --memory-limit=1G
+
+      - name: Check automated refactors
+        run: vendor/bin/rector process --dry-run --no-progress-bar
 
       - name: Check code style
         run: vendor/bin/pint --test
@@ -62,17 +71,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
           php-version: 8.4
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: npm
@@ -91,7 +100,7 @@ jobs:
 
       - name: Upload browser screenshots on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: browser-screenshots
           path: tests/Browser/Screenshots/
@@ -103,16 +112,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: npm
 
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Audit Node dependencies
+        run: npm audit --audit-level=moderate
 
       - name: Check JavaScript syntax
         run: npm run check

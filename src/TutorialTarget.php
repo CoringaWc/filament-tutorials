@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace CoringaWc\FilamentTutorials;
 
-final class TutorialTarget
+final readonly class TutorialTarget
 {
     /**
      * @param  array<string, mixed>  $parameters
      */
     public function __construct(
-        protected string $type,
-        protected ?string $key = null,
-        protected array $parameters = [],
+        private string $type,
+        private ?string $key = null,
+        private array $parameters = [],
     ) {}
 
     public static function custom(string $key): static
@@ -22,12 +22,12 @@ final class TutorialTarget
 
     public static function renderHook(string $key): static
     {
-        return new static('renderHook', $key);
+        return new self('renderHook', $key);
     }
 
     public static function component(string $key): static
     {
-        return new static('component', $key);
+        return new self('component', $key);
     }
 
     /**
@@ -35,7 +35,7 @@ final class TutorialTarget
      */
     public static function navigation(string $resourceOrPage): static
     {
-        return new static('navigation', $resourceOrPage);
+        return new self('navigation', $resourceOrPage);
     }
 
     /**
@@ -43,7 +43,7 @@ final class TutorialTarget
      */
     public static function action(string $action, ?string $owner = null): static
     {
-        return new static('action', $action, [
+        return new self('action', $action, [
             'owner' => $owner,
         ]);
     }
@@ -53,7 +53,7 @@ final class TutorialTarget
      */
     public static function page(?string $page = null): static
     {
-        return new static('page', $page);
+        return new self('page', $page);
     }
 
     /**
